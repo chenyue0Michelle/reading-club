@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>读书打卡</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    :root {
+      --red: #e8171a;
+      --red-dark: #c0141a;
+      --gold: #f5c518;
+      --text: #333;
+      --gray: #666;
+      --light-gray: #999;
+      --bg: #f5f5f5;
+      --white: #fff;
+    }
+    html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
+
+    /* ===== APP SHELL ===== */
+    #app { width: 100%; max-width: 430px; height: 100vh; margin: 0 auto; display: flex; flex-direction: column; background: var(--bg); position: relative; overflow: hidden; box-shadow: 0 0 20px rgba(0,0,0,.15); }
+
+    /* ===== PAGES ===== */
+    .page { display: none; flex-direction: column; height: 100%; overflow: hidden; }
+    .page.active { display: flex; }
+
+    /* ===== HEADER ===== */
+    .header {
+      background: var(--red);
+      color: #fff;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .header-title { font-size: 17px; font-weight: 600; text-align: center; flex: 1; }
+    .header-left, .header-right { min-width: 40px; }
+    .header-right { text-align: right; display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
+    .back-btn { font-size: 22px; cursor: pointer; line-height: 1; }
+    .icon-btn { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+
+    /* ===== TAB BAR ===== */
+    .tab-bar {
+      background: var(--white);
+      display: flex;
+      flex-shrink: 0;
+      border-bottom: 1px solid #eee;
+    }
+    .tab-item {
+      flex: 1;
+      text-align: center;
+      padding: 12px 0;
+      font-size: 14px;
+      color: var(--gray);
+      cursor: pointer;
+      position: relative;
+      transition: all .2s;
+    }
+    .tab-item.active { color: var(--red); font-weight: 600; }
+    .tab-item.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 40px;
+      height: 2px;
+      background: var(--red);
+      border-radius: 2px;
+    }
+
+    /* ===== SCROLL CONTENT ===== */
+    .scroll-content { flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+    .scroll-content::-webkit-scrollbar { width: 0; }
+
+    /* ===== HOME PAGE ===== */
+    .home-header {
+      background: linear-gradient(135deg, var(--red), var(--red-dark));
+      color: #fff;
+      padding: 20px 16px;
+      text-align: center;
+    }
+    .home-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+    .home-subtitle { font-size: 13px; opacity: 0.9; }
+    .home-stats {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255,255,255,.2);
+    }
+    .stat-item { text-align: center; }
+    .stat-num { font-size: 24px; font-weight: 700; }
+    .stat-label { font-size: 11px; opacity: 0.9; }
+
+    /* ===== CALENDAR ===== */
+    .calendar-container { background: var(--white); margin: 12px; border-radius: 12px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+    .calendar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .calendar-title { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+    .calendar-nav { display: flex; gap: 12px; }
+    .calendar-nav span { font-size: 18px; cursor: pointer; padding: 4px 8px; color: var(--gray); }
+    .calendar-nav span:hover { color: var(--red); }
+    
+    .calendar-weekday {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      text-align: center;
+      font-size: 12px;
+      color: var(--light-gray);
+      margin-bottom: 8px;
+    }
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+    .calendar-day {
+      aspect-ratio: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: all .2s;
+      position: relative;
+    }
+    .calendar-day:hover { background: #f0f0f0; }
+    .calendar-day.empty { cursor: default; }
+    .calendar-day.today { background: var(--red); color: #fff; font-weight: 600; }
+    .calendar-day.has-task::after {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: var(--gold);
+      border-radius: 50%;
+      position: absolute;
+      bottom: 4px;
+    }
+    .calendar-day.checked { background: #e8f5e9; color: #2e7d32; }
+    .calendar-day.checked::before {
+      content: '✓';
+      font-size: 10px;
+      position: absolute;
+      top: 2px;
+      right: 2px;
+    }
+    .calendar-day.selected { border: 2px solid var(--red); }
+
+    /* ===== BOOK INFO ===== */
+    .book-info-bar {
+      background: var(--white);
+      margin: 0 12px 12px;
+      border-radius: 10px;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,.05);
+    }
+    .book-cover-sm {
+      width: 50px;
+      height: 65px;
+      background: linear-gradient(135deg, #455a64, #607d8b);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 11px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .book-detail { flex: 1; }
+    .book-name { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+    .book-progress { font-size: 12px; color: var(--gray); }
+    .book-progress-bar {
+      height: 4px;
+      background: #eee;
+      border-radius: 2px;
+      margin-top: 6px;
+      overflow: hidden;
+    }
+    .book-progress-fill { height: 100%; background: var(--red); border-radius: 2px; width: 35%; }
+
+    /* ===== TASK CARD ===== */
+    .task-card {
+      background: var(--white);
+      margin: 0 12px 12px;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    }
+    .task-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px dashed #eee;
+    }
+    .task-date-badge {
+      background: var(--red);
+      color: #fff;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .task-chapter { font-size: 15px; font-weight: 600; flex: 1; }
+    
+    .task-content {
+      font-size: 14px;
+      color: var(--text);
+      line-height: 1.9;
+      text-indent: 2em;
+      margin-bottom: 16px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .task-content p { margin-bottom: 12px; }
+    
+    .task-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 12px;
+      border-top: 1px solid #f0f0f0;
+    }
+    .task-stats { font-size: 12px; color: var(--gray); }
+
+    /* ===== BUTTONS ===== */
+    .btn-punchcard {
+      background: var(--red);
+      color: #fff;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 25px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .btn-punchcard:active { transform: scale(.96); background: var(--red-dark); }
+    .btn-punchcard.checked { background: #4caf50; cursor: default; }
+
+    .btn-full {
+      background: var(--red);
+      color: #fff;
+      border: none;
+      width: 100%;
+      padding: 14px;
+      border-radius: 25px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin: 12px;
+    }
+    .btn-full:active { transform: scale(.98); }
+
+    /* ===== RECORD AREA ===== */
+    .record-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 0;
+    }
+    .mic-outer {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--red), var(--red-dark));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all .2s;
+      box-shadow: 0 4px 15px rgba(232,23,26,.3);
+    }
+    .mic-outer:active { transform: scale(.95); }
+    .mic-outer.recording {
+      animation: pulse 1s infinite;
+      background: linear-gradient(135deg, #f44336, #c62828);
+    }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(232,23,26,.4); }
+      50% { box-shadow: 0 0 0 20px rgba(232,23,26,0); }
+    }
+    .mic-inner { text-align: center; }
+    .mic-icon { font-size: 32px; }
+    .record-hint { font-size: 13px; color: var(--gray); margin-top: 12px; }
+    .record-timer { font-size: 28px; font-weight: 600; color: var(--red); margin-top: 8px; font-variant-numeric: tabular-nums; }
+
+    .record-wave {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 3px;
+      height: 30px;
+      margin-top: 12px;
+    }
+    .rw-bar {
+      width: 4px;
+      background: var(--red);
+      border-radius: 2px;
+      animation: wave 1s ease-in-out infinite;
+    }
+    .rw-bar:nth-child(1) { animation-delay: 0s; }
+    .rw-bar:nth-child(2) { animation-delay: .1s; }
+    .rw-bar:nth-child(3) { animation-delay: .2s; }
+    .rw-bar:nth-child(4) { animation-delay: .3s; }
+    .rw-bar:nth-child(5) { animation-delay: .4s; }
+    .rw-bar:nth-child(6) { animation-delay: .5s; }
+    .rw-bar:nth-child(7) { animation-delay: .6s; }
+    @keyframes wave {
+      0%, 100% { height: 8px; }
+      50% { height: 24px; }
+    }
+
+    .record-actions {
+      display: flex;
+      gap: 40px;
+      margin-top: 20px;
+    }
+    .ra-btn { text-align: center; cursor: pointer; }
+    .ra-circle {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      margin-bottom: 6px;
+    }
+    .ra-circle.cancel { background: #f5f5f5; color: var(--gray); }
+    .ra-circle.confirm { background: #4caf50; color: #fff; }
+    .ra-label { font-size: 12px; color: var(--gray); }
+
+    /* ===== MY PAGE ===== */
+    .my-profile {
+      background: var(--white);
+      margin: 12px;
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 2px 6px rgba(0,0,0,.05);
+    }
+    .avatar { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, var(--red), var(--red-dark)); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 22px; font-weight: 600; }
+    .profile-info { flex: 1; }
+    .profile-name { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+    .profile-role { font-size: 12px; color: var(--gray); background: #f0f0f0; padding: 3px 10px; border-radius: 10px; display: inline-block; }
+
+    .menu-list {
+      background: var(--white);
+      margin: 0 12px 12px;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 6px rgba(0,0,0,.05);
+    }
+    .menu-item {
+      display: flex;
+      align-items: center;
+      padding: 14px 16px;
+      border-bottom: 1px solid #f5f5f5;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .menu-item:last-child { border-bottom: none; }
+    .menu-item:active { background: #f9f9f9; }
+    .menu-icon { font-size: 20px; margin-right: 12px; }
+    .menu-text { flex: 1; font-size: 15px; }
+    .menu-chevron { color: var(--light-gray); font-size: 18px; }
+    .menu-badge { background: var(--red); color: #fff; font-size: 11px; padding: 2px 8px; border-radius: 10px; margin-right: 8px; }
+
+    /* ===== BOTTOM BAR ===== */
+    .bottom-bar {
+      background: var(--white);
+      padding: 8px 16px;
+      padding-bottom: max(8px, env(safe-area-inset-bottom));
+      flex-shrink: 0;
+      border-top: 1px solid #eee;
+    }
+
+    /* ===== JOIN PAGE ===== */
+    .join-bg {
+      background: linear-gradient(180deg, var(--red) 0%, var(--red) 40%, var(--bg) 40%);
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px 20px;
+    }
+    .join-logo {
+      width: 100px;
+      height: 100px;
+      background: var(--white);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,.15);
+    }
+    .join-title { font-size: 24px; font-weight: 700; color: #fff; margin-bottom: 8px; text-align: center; }
+    .join-subtitle { font-size: 14px; color: rgba(255,255,255,.8); margin-bottom: 30px; }
+    .join-card {
+      background: var(--white);
+      border-radius: 16px;
+      padding: 24px;
+      width: 100%;
+      box-shadow: 0 4px 20px rgba(0,0,0,.1);
+    }
+    .join-form-item { margin-bottom: 16px; }
+    .join-form-label { font-size: 13px; color: var(--gray); margin-bottom: 6px; }
+    .join-form-input {
+      width: 100%;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 15px;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .join-form-input:focus { border-color: var(--red); }
+    .btn-join {
+      width: 100%;
+      background: var(--red);
+      color: #fff;
+      border: none;
+      padding: 14px;
+      border-radius: 25px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .btn-join:active { transform: scale(.98); }
+    .join-footer { text-align: center; margin-top: 20px; font-size: 12px; color: var(--light-gray); }
+
+    /* ===== SHARE MODAL ===== */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,.5);
+      display: none;
+      align-items: flex-end;
+      z-index: 1000;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-content {
+      background: var(--white);
+      width: 100%;
+      border-radius: 16px 16px 0 0;
+      padding: 20px;
+      padding-bottom: max(20px, env(safe-area-inset-bottom));
+      animation: slideUp .3s ease;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+    .modal-title { font-size: 16px; font-weight: 600; text-align: center; margin-bottom: 20px; }
+    .share-link-box {
+      background: #f5f5f5;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 13px;
+      color: var(--gray);
+      word-break: break-all;
+      margin-bottom: 16px;
+    }
+    .share-btn {
+      width: 100%;
+      background: #07c160;
+      color: #fff;
+      border: none;
+      padding: 14px;
+      border-radius: 25px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* ===== RECORDING PAGE ===== */
+    .recording-page-header {
+      background: var(--white);
+      margin: 12px;
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    }
+    .recording-book-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+    .recording-chapter { font-size: 14px; color: var(--red); margin-bottom: 8px; }
+    .recording-date { font-size: 12px; color: var(--gray); }
+
+    /* ===== TOAST ===== */
+    .toast {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,.75);
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      z-index: 9999;
+      display: none;
+    }
+    .toast.show { display: block; animation: fadeIn .3s; }
+    @keyframes fadeIn { from { opacity: 0; transform: translate(-50%, -50%) scale(.9); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+
+    /* ===== RULE PAGE ===== */
+    .form-wrap { padding: 16px; }
+    .form-item { margin-bottom: 20px; }
+    .form-label { font-size: 14px; font-weight: 600; margin-bottom: 8px; display: block; }
+    .form-input { width: 100%; border: 1px solid #ddd; border-radius: 8px; padding: 12px; font-size: 14px; outline: none; }
+    .form-input:focus { border-color: var(--red); }
+    .btn-half { width: 48%; padding: 12px; border-radius: 25px; font-size: 15px; font-weight: 600; cursor: pointer; border: none; }
+    .btn-cancel { background: #f5f5f5; color: var(--gray); }
+    .btn-primary { background: var(--red); color: #fff; }
+
+    /* ===== RANK PAGE ===== */
+    .rank-card { background: var(--white); margin: 12px; border-radius: 12px; padding: 16px; box-shadow: 0 2px 6px rgba(0,0,0,.05); }
+    .rank-card h3 { font-size: 15px; margin-bottom: 16px; text-align: center; }
+    .rank-podium { display: flex; justify-content: center; align-items: flex-end; gap: 8px; margin-bottom: 20px; }
+    .podium-item { text-align: center; }
+    .podium-avatar { width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, var(--red), var(--red-dark)); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; font-weight: 600; margin: 0 auto 6px; }
+    .podium-name { font-size: 12px; margin-bottom: 4px; }
+    .podium-count { font-size: 14px; font-weight: 600; color: var(--red); }
+    .podium-block { font-size: 28px; }
+    .p1 .podium-avatar { width: 60px; height: 60px; font-size: 22px; }
+    .p1 .podium-block { font-size: 36px; }
+    .rank-row { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #f5f5f5; }
+    .rank-num { width: 24px; font-size: 14px; font-weight: 600; color: var(--gray); text-align: center; }
+    .rank-avatar-sm { width: 36px; height: 36px; border-radius: 50%; background: var(--red); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; margin-right: 10px; }
+    .rank-name { flex: 1; font-size: 14px; }
+    .rank-score { font-size: 14px; font-weight: 600; color: var(--red); }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- JOIN PAGE -->
+    <div class="page active" id="page-join">
+      <div class="join-bg">
+        <div class="join-logo">📖</div>
+        <div class="join-title">东莞市永耀传动科技有限公司</div>
+        <div class="join-subtitle">读书会打卡</div>
+        <div class="join-card">
+          <div class="join-form-item">
+            <div class="join-form-label">姓名</div>
+            <input class="join-form-input" id="join-name" placeholder="请输入您的姓名" value="张三">
+          </div>
+          <div class="join-form-item">
+            <div class="join-form-label">部门</div>
+            <input class="join-form-input" id="join-dept" placeholder="请输入您的部门" value="技术部">
+          </div>
+          <button class="btn-join" onclick="joinClub()">立即加入读书会</button>
+        </div>
+        <div class="join-footer">已有 73 人加入 · 连续打卡最高 56 天</div>
+      </div>
+    </div>
+
+    <!-- HOME PAGE -->
+    <div class="page" id="page-home">
+      <div class="home-header">
+        <div class="home-title">📖 读书会打卡</div>
+        <div class="home-subtitle">东莞市永耀传动科技有限公司</div>
+        <div class="home-stats">
+          <div class="stat-item">
+            <div class="stat-num">73</div>
+            <div class="stat-label">成员</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-num">11</div>
+            <div class="stat-label">已打卡</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-num">56</div>
+            <div class="stat-label">最长连续</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Calendar -->
+      <div class="scroll-content">
+        <div class="calendar-container">
+          <div class="calendar-header">
+            <div class="calendar-title">
+              <span>📅</span>
+              <span id="calendar-month">2026年4月</span>
+            </div>
+            <div class="calendar-nav">
+              <span onclick="changeMonth(-1)">‹</span>
+              <span onclick="changeMonth(1)">›</span>
+            </div>
+          </div>
+          <div class="calendar-weekday">
+            <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
+          </div>
+          <div class="calendar-grid" id="calendar-grid"></div>
+        </div>
+
+        <!-- Book Info -->
+        <div class="book-info-bar">
+          <div class="book-cover-sm">稻盛<br>和夫<br>演讲集</div>
+          <div class="book-detail">
+            <div class="book-name">《稻盛和夫演讲集》</div>
+            <div class="book-progress">已读 11/60 章</div>
+            <div class="book-progress-bar"><div class="book-progress-fill"></div></div>
+          </div>
+        </div>
+
+        <!-- Task Content -->
+        <div id="task-container"></div>
+
+        <!-- Bottom Nav -->
+        <div class="tab-bar">
+          <div class="tab-item active" onclick="switchTab('home')">🏠 首页</div>
+          <div class="tab-item" onclick="switchTab('rank')">🏆 排行</div>
+          <div class="tab-item" onclick="switchTab('my')">👤 我的</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RECORD PAGE -->
+    <div class="page" id="page-record">
+      <div class="header">
+        <div class="header-left"><span class="back-btn" onclick="goBack()">‹</span></div>
+        <div class="header-title">录音打卡</div>
+        <div class="header-right"></div>
+      </div>
+      <div class="scroll-content">
+        <div class="recording-page-header">
+          <div class="recording-book-title">📚 《稻盛和夫演讲集》</div>
+          <div class="recording-chapter" id="rec-chapter">P032-P034 经营之心（3）</div>
+          <div class="recording-date" id="rec-date">📅 2026-04-08</div>
+        </div>
+
+        <!-- Chapter Content -->
+        <div class="task-card">
+          <div class="task-header">
+            <span class="task-date-badge" id="task-badge">今日内容</span>
+            <span class="task-chapter" id="task-chapter-title">P032-P034</span>
+          </div>
+          <div class="task-content" id="task-content-html">
+            <p>在经营活动中，最重要的事情就是"以心为本"。企业经营的核心在于人心，只有凝聚人心，才能凝聚力量。经营者必须率先垂范，以身作则，用正确的哲学思想引导员工。</p>
+            
+            <p>松下幸之助先生曾说："企业即人。"企业的发展取决于人的素质高低。要想发展企业，首先要培育人才。只有培育出优秀的人才，企业才能持续发展。</p>
+            
+            <p>作为经营者，必须具备"燃烧的斗魂"。面对困难不退缩，遇到挑战不畏惧。要以积极乐观的态度面对一切，在逆境中寻找机会，在危机中把握转机。</p>
+            
+            <p>同时，经营者还要具备"纯粹的之心"。动机至善，私心了无。做任何决策时，都要扪心自问：动机是否纯粹？是否是为了全体员工的幸福？是否是为了社会的发展？</p>
+            
+            <p>只有以这样纯粹的心去经营，才能得到员工的认同和追随，才能凝聚起全体员工的力量，把企业做大做强，实现物质和精神的双重幸福。</p>
+          </div>
+        </div>
+
+        <!-- Record Area -->
+        <div class="task-card">
+          <div class="record-area">
+            <div style="font-size:13px;color:var(--gray);margin-bottom:16px;text-align:center">长按麦克风开始录音，松开结束</div>
+            <div class="mic-outer" id="mic-btn" onmousedown="startRecord()" onmouseup="stopRecord()" ontouchstart="startRecord(event)" ontouchend="stopRecord(event)">
+              <div class="mic-inner">
+                <span class="mic-icon">🎙️</span>
+              </div>
+            </div>
+            <div class="record-hint" id="record-hint">按住录音</div>
+            <div class="record-timer" id="record-timer">00:00</div>
+            <div class="record-wave" id="record-wave" style="visibility:hidden">
+              <div class="rw-bar" style="height:8px"></div>
+              <div class="rw-bar" style="height:16px"></div>
+              <div class="rw-bar" style="height:24px"></div>
+              <div class="rw-bar" style="height:20px"></div>
+              <div class="rw-bar" style="height:28px"></div>
+              <div class="rw-bar" style="height:16px"></div>
+              <div class="rw-bar" style="height:10px"></div>
+            </div>
+            <div class="record-actions" id="record-actions" style="display:none">
+              <div class="ra-btn" onclick="cancelRecord()">
+                <div class="ra-circle cancel">✕</div>
+                <span class="ra-label">取消</span>
+              </div>
+              <div class="ra-btn" onclick="submitRecord()">
+                <div class="ra-circle confirm">✓</div>
+                <span class="ra-label">提交</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="padding:0 16px;margin-bottom:80px">
+          <div style="font-size:13px;color:var(--gray);margin-bottom:8px;font-weight:600">添加文字心得（选填）</div>
+          <textarea id="record-text" style="width:100%;border:1px solid #eee;border-radius:8px;padding:10px;font-size:13px;resize:none;outline:none;color:var(--text);font-family:inherit" rows="4" placeholder="写下你的读书感悟..."></textarea>
+        </div>
+      </div>
+      <div class="bottom-bar">
+        <button class="btn-full" onclick="submitRecord()">提交打卡</button>
+      </div>
+    </div>
+
+    <!-- RANK PAGE -->
+    <div class="page" id="page-rank">
+      <div class="header">
+        <div class="header-left"></div>
+        <div class="header-title">打卡排行榜</div>
+        <div class="header-right"></div>
+      </div>
+      <div class="scroll-content">
+        <div class="rank-card">
+          <h3>🏆 本月打卡排行榜</h3>
+          <div class="rank-podium">
+            <div class="podium-item p2">
+              <div class="podium-avatar">刘</div>
+              <div class="podium-name">刘世全</div>
+              <div class="podium-count">118次</div>
+              <div class="podium-block">🥈</div>
+            </div>
+            <div class="podium-item p1">
+              <div class="podium-avatar">陈</div>
+              <div class="podium-name">陈小明</div>
+              <div class="podium-count">126次</div>
+              <div class="podium-block">🥇</div>
+            </div>
+            <div class="podium-item p3">
+              <div class="podium-avatar">王</div>
+              <div class="podium-name">王芳</div>
+              <div class="podium-count">105次</div>
+              <div class="podium-block">🥉</div>
+            </div>
+          </div>
+          <div class="rank-list">
+            <div class="rank-row">
+              <div class="rank-num">4</div>
+              <div class="rank-avatar-sm">李</div>
+              <div class="rank-name">李强</div>
+              <div class="rank-score">98次</div>
+            </div>
+            <div class="rank-row">
+              <div class="rank-num">5</div>
+              <div class="rank-avatar-sm">张</div>
+              <div class="rank-name">张伟</div>
+              <div class="rank-score">89次</div>
+            </div>
+            <div class="rank-row">
+              <div class="rank-num">6</div>
+              <div class="rank-avatar-sm">周</div>
+              <div class="rank-name">周杰</div>
+              <div class="rank-score">76次</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Nav -->
+        <div class="tab-bar">
+          <div class="tab-item" onclick="switchTab('home')">🏠 首页</div>
+          <div class="tab-item active" onclick="switchTab('rank')">🏆 排行</div>
+          <div class="tab-item" onclick="switchTab('my')">👤 我的</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MY PAGE -->
+    <div class="page" id="page-my">
+      <div class="header">
+        <div class="header-left"></div>
+        <div class="header-title">我的</div>
+        <div class="header-right"></div>
+      </div>
+      <div class="scroll-content">
+        <div class="my-profile">
+          <div class="avatar">张</div>
+          <div class="profile-info">
+            <div class="profile-name" id="my-name">张三</div>
+            <div class="profile-role" id="my-dept">技术部</div>
+          </div>
+        </div>
+
+        <div class="menu-list">
+          <div class="menu-item" onclick="showShareModal()">
+            <span class="menu-icon">🔗</span>
+            <span class="menu-text">邀请同事加入</span>
+            <span class="menu-chevron">›</span>
+          </div>
+          <div class="menu-item" onclick="showMyRecords()">
+            <span class="menu-icon">📊</span>
+            <span class="menu-text">我的打卡记录</span>
+            <span class="menu-chevron">›</span>
+          </div>
+          <div class="menu-item">
+            <span class="menu-icon">📚</span>
+            <span class="menu-text">已读章节</span>
+            <span class="menu-badge" id="read-count">0章</span>
+            <span class="menu-chevron">›</span>
+          </div>
+        </div>
+
+        <div class="menu-list">
+          <div class="menu-item" onclick="downloadCSV()" style="background:#fff3e0">
+            <span class="menu-icon">📥</span>
+            <span class="menu-text" style="color:var(--red);font-weight:600">导出打卡记录</span>
+            <span class="menu-chevron">›</span>
+          </div>
+          <div class="menu-item" onclick="showAdminPanel()">
+            <span class="menu-icon">👑</span>
+            <span class="menu-text">管理后台</span>
+            <span class="menu-chevron">›</span>
+          </div>
+        </div>
+
+        <div class="menu-list">
+          <div class="menu-item" onclick="showPage('page-rule')">
+            <span class="menu-icon">⚙️</span>
+            <span class="menu-text">设置打卡内容</span>
+            <span class="menu-chevron">›</span>
+          </div>
+        </div>
+
+        <!-- Bottom Nav -->
+        <div class="tab-bar">
+          <div class="tab-item" onclick="switchTab('home')">🏠 首页</div>
+          <div class="tab-item" onclick="switchTab('rank')">🏆 排行</div>
+          <div class="tab-item active" onclick="switchTab('my')">👤 我的</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RULE PAGE -->
+    <div class="page" id="page-rule">
+      <div class="header">
+        <div class="header-left"><span class="back-btn" onclick="goBack()">‹</span></div>
+        <div class="header-title">设置打卡内容</div>
+        <div class="header-right"></div>
+      </div>
+      <div class="scroll-content">
+        <div class="form-wrap">
+          <div class="form-item">
+            <label class="form-label">书籍名称</label>
+            <input class="form-input" id="rule-book" placeholder="如：《稻盛和夫演讲集》">
+          </div>
+          <div class="form-item">
+            <label class="form-label">章节标题</label>
+            <input class="form-input" id="rule-chapter" placeholder="如：P032-P034 经营之心（3）">
+          </div>
+          <div class="form-item">
+            <label class="form-label">打卡日期</label>
+            <input class="form-input" type="date" id="rule-date">
+          </div>
+          <div class="form-item">
+            <label class="form-label">章节内容（粘贴书本内容）</label>
+            <textarea class="form-input" id="rule-content" rows="8" placeholder="请粘贴当天章节的具体内容..."></textarea>
+          </div>
+          <div style="display:flex;gap:4%;margin-top:20px">
+            <button class="btn-half btn-cancel" onclick="goBack()">取消</button>
+            <button class="btn-half btn-primary" onclick="saveRule()">保存</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MY RECORDS MODAL -->
+    <div class="modal-overlay" id="my-records-modal" onclick="closeMyRecords(event)">
+      <div class="modal-content" onclick="event.stopPropagation()" style="max-height:80vh;overflow-y:auto">
+        <div class="modal-title">我的打卡记录</div>
+        <div id="my-records-list" style="margin-top:12px"></div>
+        <div style="text-align:center;margin-top:16px">
+          <span onclick="closeMyRecords()" style="color:var(--gray);font-size:14px;cursor:pointer">关闭</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADMIN PANEL -->
+    <div class="page" id="page-admin">
+      <div class="header">
+        <div class="header-left"><span class="back-btn" onclick="goBack()">‹</span></div>
+        <div class="header-title">管理后台</div>
+        <div class="header-right"></div>
+      </div>
+      <div class="scroll-content">
+        <div style="margin:12px">
+          <div style="background:var(--red);color:#fff;padding:16px;border-radius:12px;margin-bottom:12px">
+            <div style="font-size:18px;font-weight:600;margin-bottom:8px">📊 永耀读书会</div>
+            <div style="font-size:13px;opacity:0.9">数据保存30天，可随时导出</div>
+          </div>
+          
+          <!-- 今日打卡情况 -->
+          <div class="menu-list" style="border-radius:12px;overflow:hidden">
+            <div style="padding:16px;background:#fff;font-weight:600;border-bottom:1px solid #eee">
+              📅 今日打卡情况
+            </div>
+            <div id="admin-today" style="padding:16px;background:#fff"></div>
+          </div>
+          
+          <!-- 打卡人员列表 -->
+          <div class="menu-list" style="border-radius:12px;overflow:hidden;margin-top:12px">
+            <div style="padding:16px;background:#fff;font-weight:600;border-bottom:1px solid #eee">
+              👥 打卡人员名单
+            </div>
+            <div id="admin-users" style="padding:12px;background:#fff"></div>
+          </div>
+          
+          <!-- 导出按钮 -->
+          <button onclick="downloadCSV()" style="width:100%;margin-top:16px;padding:14px;background:var(--red);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600">
+            📥 导出全部打卡记录（CSV格式）
+          </button>
+          
+          <div style="font-size:12px;color:var(--gray);text-align:center;margin-top:12px">
+            导出后用Excel打开即可查看
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SHARE MODAL -->
+    <div class="modal-overlay" id="share-modal" onclick="closeShareModal(event)">
+      <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-title">邀请同事加入读书会</div>
+        <div class="share-link-box" id="share-link">https://reading.yongyao.com/join/abc123</div>
+        <button class="share-btn" onclick="copyLink()">📋 复制链接</button>
+        <div style="text-align:center;margin-top:12px">
+          <span onclick="closeShareModal()" style="color:var(--gray);font-size:14px;cursor:pointer">关闭</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOAST -->
+    <div class="toast" id="toast"></div>
+  </div>
+
+  <script>
+    // ===== 读书内容数据 - 每天一章 =====
+    const bookContent = {
+      '2026-03-28': { chapter: 'P002-P003 序言', content: '<p>稻盛和夫先生是日本"经营四圣"之一，他27岁创办京瓷，52岁创办KDDI，两家企业都进入世界500强。78岁应政府邀请，重建破产的日航，使其重新上市。</p><p>本书汇集了稻盛先生历年来的精彩演讲，涵盖经营哲学、人生哲学、阿米巴经营等核心内容。</p><p>在序言中，稻盛先生强调："企业经营的本质，在于经营者的心灵。"只有不断提升心性，才能拓展经营；只有光明正大地做人，企业才能持续发展。</p>' },
+      '2026-03-29': { chapter: 'P004-P006 经营之心（1）', content: '<p>"以心为本"是京瓷经营的根基。稻盛先生认为，虽然企业经营需要各种要素——资金、技术、人才——但最根本的是经营者的心。</p><p>人心比什么都重要，这是古今中外不变的真理。要让员工发自内心地认同公司、热爱工作，经营者必须以身作则，用纯粹的利他之心对待每一个人。</p>' },
+      '2026-03-30': { chapter: 'P007-P009 经营之心（2）', content: '<p>企业的成长发展，取决于员工的心。如果员工把公司当作自己的公司，主动积极地工作，企业就能不断发展壮大。</p><p>为此，经营者必须与员工建立心与心的连接。不是靠权力，不是靠命令，而是靠真诚的关心和信任。当员工感受到经营者真心为他们好时，就会产生发自内心的认同感。</p>' },
+      '2026-03-31': { chapter: 'P010-P012 经营之心（3）', content: '<p>为了与员工建立心与心的连接，稻盛先生主张"玻璃般透明"的经营。公司的状况、经营的理念、存在的问题，都要毫无保留地告诉员工。</p><p>只有敞开心扉，员工才能理解经营者的想法，才能产生共鸣，才能把公司的事情当作自己的事情。</p>' },
+      '2026-04-01': { chapter: 'P013-P015 经营之心（4）', content: '<p>为了实现"以心为本"的经营，需要确立公司的使命。京瓷的使命是："在追求全体员工物质和精神两方面幸福的同时，为人类社会的进步发展做出贡献。"</p><p>这个崇高的使命，将员工的工作与人生的意义联系在一起。</p>' },
+      '2026-04-02': { chapter: 'P016-P018 经营之心（5）', content: '<p>在确立使命的同时，还要明确公司的愿景。京瓷的愿景是："成为世界一流的综合性精密陶瓷制造商"。</p><p>使命回答"为什么存在"，愿景回答"要成为什么"。两者结合，就构成了公司的远大目标。</p>' },
+      '2026-04-03': { chapter: 'P019-P021 经营之心（6）', content: '<p>经营哲学需要血肉化才能真正落地。再好的哲学，如果只是停留在口头上，就毫无意义。</p><p>"将哲学血肉化"意味着要把哲学融入到日常工作的每一个细节中，变成员工自然而然的行为习惯。</p>' },
+      '2026-04-04': { chapter: 'P022-P024 经营之心（7）', content: '<p>在危机时代，经营者更要发挥领导力。危机是对企业，更是对经营者的一次考验。</p><p>面对危机，有人看到的是绝望，有人看到的是机会。经营者必须保持坚定的信念，用积极乐观的态度感染每一位员工。</p>' },
+      '2026-04-05': { chapter: 'P025-P027 经营十二条（1）', content: '<p>经营十二条是稻盛先生经营哲学的核心。第一条：明确事业的目的和意义。</p><p>经营事业必须确立大义名分。这个目的必须能够唤起员工内心的共鸣，让大家觉得"这项事业值得拼命努力"。</p>' },
+      '2026-04-06': { chapter: 'P028-P030 经营十二条（2）', content: '<p>第二条：设立具体的目标。光是有一个宏大的愿望是不够的，必须设定具体的目标数字。</p><p>目标要写在纸上，大声念出来，让全体员工都清楚地知道目标是什么。不仅是年度目标，月度目标、周目标都要明确。</p>' },
+      '2026-04-07': { chapter: 'P031-P033 经营十二条（3）', content: '<p>第三条：胸中怀有强烈的愿望。稻盛先生说："只要你内心能够想到的事情，你就有可能做到。"</p><p>这里的"想到"，不是轻描淡写的想法，而是抱有强烈愿望、充满燃烧般热情的那种thinking。</p>' },
+      '2026-04-08': { chapter: 'P034-P036 经营十二条（4）', content: '<p>第四条：付出不亚于任何人的努力。成功没有捷径，只有一步一步地积累。</p><p>每一天都要比前一天更进一步，每一天都要付出不亚于任何人的努力。这样持之以恒，自然就能收获成功。</p>' }
+    };
+
+    // ===== 数据存储管理 =====
+    const STORAGE_KEYS = { USER: 'yy_reading_user', RECORDS: 'yy_reading_records' };
+    
+    function getUserInfo() { const data = localStorage.getItem(STORAGE_KEYS.USER); return data ? JSON.parse(data) : null; }
+    function saveUserInfo(name, dept) { const user = { name, dept, joinTime: new Date().toISOString() }; localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user)); return user; }
+    function getAllRecords() { const data = localStorage.getItem(STORAGE_KEYS.RECORDS); return data ? JSON.parse(data) : {}; }
+    function saveRecord(date, record) { const records = getAllRecords(); if (!records[date]) records[date] = []; records[date].push(record); localStorage.setItem(STORAGE_KEYS.RECORDS, JSON.stringify(records)); }
+    function isUserCheckedIn(date) { const user = getUserInfo(); if (!user) return false; const records = getAllRecords(); return records[date]?.some(r => r.name === user.name); }
+    function getUserStats() { const user = getUserInfo(); if (!user) return { total: 0, consecutive: 0 }; const records = getAllRecords(); let total = 0, consecutive = 0; const today = new Date(); for (let i = 0; i < 365; i++) { const d = new Date(today); d.setDate(d.getDate() - i); const dateStr = d.toISOString().split('T')[0]; if (records[dateStr]?.some(r => r.name === user.name)) { total++; consecutive++; } else if (i > 0) { break; } } return { total, consecutive }; }
+    function getAllUsers() { const records = getAllRecords(); const users = {}; for (const date in records) { records[date].forEach(r => { if (!users[r.name]) { users[r.name] = { name: r.name, dept: r.dept, count: 0 }; } users[r.name].count++; }); } return Object.values(users); }
+    function getDayRecords(date) { const records = getAllRecords(); return records[date] || []; }
+    function downloadCSV() { const records = getAllRecords(); const dates = Object.keys(records).sort(); let csv = '日期,姓名,部门,打卡时间,文字心得\n'; dates.forEach(date => { records[date].forEach(r => { const text = (r.text || '').replace(/"/g, '""').replace(/\n/g, ' '); csv += `"${date}","${r.name}","${r.dept}","${r.time}","${text}"\n`; }); }); const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `永耀读书会打卡记录_${new Date().toISOString().split('T')[0]}.csv`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); showToast('导出成功！'); }
+
+    let selectedDate = '2026-04-08';
+    let currentMonth = new Date();
+
+    function showPage(pageId) { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById('page-' + pageId).classList.add('active'); if (pageId === 'home') renderCalendar(); }
+    function goBack() { showPage('home'); }
+    function switchTab(tab) { showPage(tab === 'home' ? 'home' : (tab === 'rank' ? 'rank' : 'my')); }
+
+    function joinClub() { const name = document.getElementById('join-name').value.trim() || '员工'; const dept = document.getElementById('join-dept').value.trim() || '未填写部门'; const user = saveUserInfo(name, dept); document.getElementById('my-name').textContent = name; document.querySelector('.avatar').textContent = name.charAt(0); updateStats(); showPage('home'); showToast('加入成功！'); }
+
+    function renderCalendar() { const grid = document.getElementById('calendar-grid'); const year = currentMonth.getFullYear(); const month = currentMonth.getMonth(); document.getElementById('calendar-month').textContent = `${year}年${month + 1}月`; const firstDay = new Date(year, month, 1).getDay(); const daysInMonth = new Date(year, month + 1, 0).getDate(); const today = new Date(); let html = ''; for (let i = 0; i < firstDay; i++) { html += '<div class="calendar-day empty"></div>'; } for (let d = 1; d <= daysInMonth; d++) { const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`; const isToday = year === today.getFullYear() && month === today.getMonth() && d === today.getDate(); const hasTask = bookContent[dateStr]; const isChecked = isUserCheckedIn(dateStr); const isSelected = dateStr === selectedDate; let classes = 'calendar-day'; if (isToday) classes += ' today'; else if (isSelected && hasTask) classes += ' selected'; if (hasTask) classes += ' has-task'; if (isChecked) classes += ' checked'; html += `<div class="${classes}" onclick="selectDate('${dateStr}')">${d}</div>`; } grid.innerHTML = html; }
+
+    function changeMonth(delta) { currentMonth.setMonth(currentMonth.getMonth() + delta); renderCalendar(); updateTaskContent(); }
+    function selectDate(dateStr) { selectedDate = dateStr; renderCalendar(); updateTaskContent(); showPage('home'); }
+
+    function updateTaskContent() { const container = document.getElementById('task-container'); const content = bookContent[selectedDate]; if (!content) { container.innerHTML = '<div class="task-card" style="text-align:center;padding:30px"><div style="font-size:48px;margin-bottom:12px">📅</div><div style="color:var(--gray)">该日期暂无打卡任务</div></div>'; return; } const isChecked = isUserCheckedIn(selectedDate); const dayRecords = getDayRecords(selectedDate); container.innerHTML = '<div class="task-card"><div class="task-header"><span class="task-date-badge">' + selectedDate + '</span><span class="task-chapter">' + content.chapter + '</span></div><div class="task-content">' + content.content + '</div><div class="task-footer"><span class="task-stats">✅ 已打卡：' + dayRecords.length + '人</span>' + (isChecked ? '<button class="btn-punchcard checked" disabled>✓ 已打卡</button>' : '<button class="btn-punchcard" onclick="goToRecord()">立即打卡</button>') + '</div></div>'; }
+
+    function goToRecord() { const content = bookContent[selectedDate]; if (content) { document.getElementById('rec-chapter').textContent = content.chapter; document.getElementById('task-chapter-title').textContent = content.chapter.split(' ')[0]; document.getElementById('task-badge').textContent = selectedDate + ' 日内容'; document.getElementById('task-content-html').innerHTML = content.content; document.getElementById('rec-date').textContent = '📅 ' + selectedDate; } showPage('record'); }
+
+    let mediaRecorder, audioChunks = [], recordingTimer, recordingSeconds = 0, isRecording = false;
+
+    async function startRecord(e) { if (e) e.preventDefault(); if (isRecording) return; try { const stream = await navigator.mediaDevices.getUserMedia({ audio: true }); mediaRecorder = new MediaRecorder(stream); audioChunks = []; mediaRecorder.ondataavailable = e => audioChunks.push(e.data); mediaRecorder.onstop = () => { const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' }); console.log('Recording complete:', audioBlob); }; mediaRecorder.start(); isRecording = true; document.getElementById('mic-btn').classList.add('recording'); document.getElementById('record-wave').style.visibility = 'visible'; document.getElementById('record-hint').textContent = '正在录音...'; recordingSeconds = 0; recordingTimer = setInterval(() => { recordingSeconds++; const mins = Math.floor(recordingSeconds / 60).toString().padStart(2, '0'); const secs = (recordingSeconds % 60).toString().padStart(2, '0'); document.getElementById('record-timer').textContent = `${mins}:${secs}`; }, 1000); } catch (err) { showToast('请允许麦克风权限'); } }
+
+    function stopRecord(e) { if (e) e.preventDefault(); if (!isRecording) return; mediaRecorder?.stop(); isRecording = false; clearInterval(recordingTimer); document.getElementById('mic-btn').classList.remove('recording'); document.getElementById('record-wave').style.visibility = 'hidden'; document.getElementById('record-hint').textContent = '录音完成'; document.getElementById('record-actions').style.display = 'flex'; }
+
+    function cancelRecord() { audioChunks = []; document.getElementById('record-timer').textContent = '00:00'; document.getElementById('record-hint').textContent = '按住录音'; document.getElementById('record-actions').style.display = 'none'; showToast('已取消'); }
+
+    function submitRecord() { const user = getUserInfo(); if (!user) { showToast('请先加入读书会'); showPage('page-join'); return; } const text = document.getElementById('record-text')?.value || ''; const record = { name: user.name, dept: user.dept, time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }), date: selectedDate, text: text }; saveRecord(selectedDate, record); audioChunks = []; if (document.getElementById('record-text')) { document.getElementById('record-text').value = ''; } renderCalendar(); updateTaskContent(); updateStats(); const stats = getUserStats(); const readEl = document.getElementById('read-count'); if (readEl) readEl.textContent = stats.total + '章'; showToast('打卡成功！'); setTimeout(() => showPage('home'), 1000); }
+
+    function showShareModal() { document.getElementById('share-modal').classList.add('active'); }
+    function closeShareModal(e) { if (e && e.target !== e.currentTarget) return; document.getElementById('share-modal').classList.remove('active'); }
+    function copyLink() { const link = document.getElementById('share-link').textContent; navigator.clipboard?.writeText(link).then(() => showToast('链接已复制')); }
+
+    function showToast(msg) { const toast = document.getElementById('toast'); toast.textContent = msg; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2000); }
+
+    function saveRule() { const book = document.getElementById('rule-book').value; const chapter = document.getElementById('rule-chapter').value; const date = document.getElementById('rule-date').value; const content = document.getElementById('rule-content').value; if (book && chapter && date && content) { bookContent[date] = { chapter, content: '<p>' + content + '</p>' }; showToast('保存成功！'); goBack(); renderCalendar(); updateTaskContent(); } else { showToast('请填写完整信息'); } }
+
+    function showMyRecords() { const user = getUserInfo(); if (!user) { showToast('请先加入读书会'); showPage('page-join'); return; } const records = getAllRecords(); const myRecords = []; for (const date in records) { const dayRecords = records[date]; const myRecord = dayRecords.find(r => r.name === user.name); if (myRecord) { myRecords.push({ date, ...myRecord, chapter: bookContent[date]?.chapter || '' }); } } myRecords.sort((a, b) => b.date.localeCompare(a.date)); const listEl = document.getElementById('my-records-list'); if (myRecords.length === 0) { listEl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--gray)">暂无打卡记录<br>快去打卡吧！</div>'; } else { listEl.innerHTML = myRecords.map(r => '<div style="padding:12px;border-bottom:1px solid #f0f0f0"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-weight:600;color:var(--red)">' + r.date + '</span><span style="color:var(--gray);font-size:12px">' + r.time + '</span></div><div style="font-size:13px;color:var(--text);margin-bottom:4px">' + r.chapter + '</div>' + (r.text ? '<div style="font-size:12px;color:var(--gray);background:#f8f8f8;padding:8px;border-radius:6px">' + r.text + '</div>' : '') + '</div>').join(''); } document.getElementById('my-records-modal').classList.add('active'); document.getElementById('read-count').textContent = myRecords.length + '章'; }
+    function closeMyRecords(e) { if (e && e.target !== e.currentTarget) return; document.getElementById('my-records-modal').classList.remove('active'); }
+
+    function showAdminPanel() { const today = new Date().toISOString().split('T')[0]; const todayRecords = getDayRecords(today); const allUsers = getAllUsers(); document.getElementById('admin-today').innerHTML = '<div style="display:flex;justify-content:space-around;text-align:center"><div><div style="font-size:28px;font-weight:700;color:var(--red)">' + allUsers.length + '</div><div style="font-size:12px;color:var(--gray)">总人数</div></div><div><div style="font-size:28px;font-weight:700;color:#4caf50">' + todayRecords.length + '</div><div style="font-size:12px;color:var(--gray)">今日打卡</div></div><div><div style="font-size:28px;font-weight:700;color:var(--gold)">' + (allUsers.length > 0 ? Math.round(todayRecords.length/allUsers.length*100) : 0) + '%</div><div style="font-size:12px;color:var(--gray)">打卡率</div></div></div>'; const usersHtml = todayRecords.length > 0 ? todayRecords.map(r => '<div style="display:flex;align-items:center;padding:8px 0;border-bottom:1px solid #f5f5f5"><div style="width:32px;height:32px;background:var(--red);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;margin-right:10px">' + r.name.charAt(0) + '</div><div style="flex:1"><div style="font-size:14px;font-weight:500">' + r.name + '</div><div style="font-size:11px;color:var(--gray)">' + r.dept + ' · ' + r.time + '</div></div><span style="color:#4caf50;font-size:20px">✓</span></div>').join('') : '<div style="text-align:center;padding:20px;color:var(--gray)">今日暂无打卡</div>'; document.getElementById('admin-users').innerHTML = usersHtml; showPage('page-admin'); }
+
+    function updateStats() { const stats = getUserStats(); const readEl = document.getElementById('read-count'); if (readEl) readEl.textContent = stats.total + '章'; }
+
+    document.addEventListener('DOMContentLoaded', () => { const user = getUserInfo(); if (user) { document.getElementById('my-name').textContent = user.name; document.getElementById('my-dept').textContent = user.dept; document.querySelector('.avatar').textContent = user.name.charAt(0); } renderCalendar(); updateTaskContent(); updateStats(); const stats = getUserStats(); const readEl = document.getElementById('read-count'); if (readEl) readEl.textContent = stats.total + '章'; });
+  </script>
+</body>
+</html>
