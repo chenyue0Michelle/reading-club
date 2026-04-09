@@ -1022,7 +1022,7 @@
 
     function updateStats() { const stats = getUserStats(); const readEl = document.getElementById('read-count'); if (readEl) readEl.textContent = stats.total + '章'; }
 
-    document.addEventListener('DOMContentLoaded', () => { const user = getUserInfo(); if (user) { document.getElementById('my-name').textContent = user.name; document.getElementById('my-dept').textContent = user.dept; document.querySelector('.avatar').textContent = user.name.charAt(0); } renderCalendar(); updateTaskContent(); updateStats(); const stats = getUserStats(); const readEl = document.getElementById('read-count'); if (readEl) readEl.textContent = stats.total + '章'; });
+    document.addEventListener('DOMContentLoaded', () => { const user = getUserInfo(); if (user) { document.getElementById('my-name').textContent = user.name; document.getElementById('my-dept').textContent = user.dept; document.querySelector('.avatar').textContent = user.name.charAt(0); document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById('page-home').classList.add('active'); renderCalendar(); updateTaskContent(); updateStats(); const stats = getUserStats(); const readEl = document.getElementById('read-count'); if (readEl) readEl.textContent = stats.total + '天'; } else { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById('page-join').classList.add('active'); } });
   </script>
 </body>
 </html>
