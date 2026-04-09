@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>读书打卡 - uniCloud版</title>
+  <script src="https://static-mp-b2be9018-6e45-4c71-9e09-c26926791d3a.cloudbase.cn/cloudbase-js-sdk/2.6.1/cloudbase.full.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    :root { --red: #e8171a; --red-dark: #c0141a; --gold: #f5c518; --text: #333; --gray: #666; --light-gray: #999; --bg: #f5f5f5; --white: #fff; }
+    html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
+    #app { width: 100%; max-width: 430px; height: 100vh; margin: 0 auto; display: flex; flex-direction: column; background: var(--bg); position: relative; overflow: hidden; box-shadow: 0 0 20px rgba(0,0,0,.15); }
+    .page { display: none; flex-direction: column; height: 100%; overflow: hidden; }
+    .page.active { display: flex; }
+    .header { background: var(--red); color: #fff; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .header-title { font-size: 17px; font-weight: 600; text-align: center; flex: 1; }
+    .header-left, .header-right { min-width: 40px; }
+    .back-btn { font-size: 22px; cursor: pointer; line-height: 1; }
+    .tab-bar { background: var(--white); display: flex; flex-shrink: 0; border-bottom: 1px solid #eee; }
+    .tab-item { flex: 1; text-align: center; padding: 12px 0; font-size: 14px; color: var(--gray); cursor: pointer; position: relative; transition: all .2s; }
+    .tab-item.active { color: var(--red); font-weight: 600; }
+    .tab-item.active::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 40px; height: 2px; background: var(--red); border-radius: 2px; }
+    .scroll-content { flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+    .scroll-content::-webkit-scrollbar { width: 0; }
+    .home-header { background: linear-gradient(135deg, var(--red), var(--red-dark)); color: #fff; padding: 20px 16px; text-align: center; }
+    .home-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+    .home-subtitle { font-size: 13px; opacity: 0.9; }
+    .home-stats { display: flex; justify-content: space-around; margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.2); }
+    .stat-item { text-align: center; }
+    .stat-num { font-size: 24px; font-weight: 700; }
+    .stat-label { font-size: 11px; opacity: 0.9; }
+    .calendar-container { background: var(--white); margin: 12px; border-radius: 12px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+    .calendar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .calendar-title { font-size: 16px; font-weight: 600; }
+    .calendar-nav { display: flex; gap: 12px; }
+    .calendar-nav span { font-size: 18px; cursor: pointer; padding: 4px 8px; color: var(--gray); }
+    .calendar-weekday { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 12px; color: var(--light-gray); margin-bottom: 8px; }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    .calendar-day { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 14px; border-radius: 50%; cursor: pointer; transition: all .2s; position: relative; }
+    .calendar-day:hover { background: #f0f0f0; }
+    .calendar-day.empty { cursor: default; }
+    .calendar-day.today { background: var(--red); color: #fff; font-weight: 600; }
+    .calendar-day.has-task::after { content: ''; width: 6px; height: 6px; background: var(--gold); border-radius: 50%; position: absolute; bottom: 4px; }
+    .calendar-day.checked { background: #e8f5e9; color: #2e7d32; }
+    .book-info-bar { background: var(--white); margin: 0 12px 12px; border-radius: 10px; padding: 14px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 6px rgba(0,0,0,.05); }
+    .book-cover-sm { width: 50px; height: 65px; background: linear-gradient(135deg, #455a64, #607d8b); border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; text-align: center; flex-shrink: 0; }
+    .book-detail { flex: 1; }
+    .book-name { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+    .book-progress { font-size: 12px; color: var(--gray); }
+    .book-progress-bar { height: 4px; background: #eee; border-radius: 2px; margin-top: 6px; overflow: hidden; }
+    .book-progress-fill { height: 100%; background: var(--red); border-radius: 2px; width: 35%; }
+    .task-card { background: var(--white); margin: 0 12px 12px; border-radius: 12px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+    .task-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px dashed #eee; }
+    .task-date-badge { background: var(--red); color: #fff; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .task-chapter { font-size: 15px; font-weight: 600; flex: 1; }
+    .task-content { font-size: 14px; color: var(--text); line-height: 1.9; text-indent: 2em; margin-bottom: 16px; max-height: 300px; overflow-y: auto; }
+    .task-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 12px; border-top: 1px solid #f0f0f0; }
+    .task-stats { font-size: 12px; color: var(--gray); }
+    .btn-punchcard { background: var(--red); color: #fff; border: none; padding: 10px 24px; border-radius: 25px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .btn-punchcard.checked { background: #4caf50; cursor: default; }
+    .btn-full { background: var(--red); color: #fff; border: none; width: 100%; padding: 14px; border-radius: 25px; font-size: 16px; font-weight: 600; cursor: pointer; margin: 12px; }
+    .record-area { display: flex; flex-direction: column; align-items: center; padding: 20px 0; }
+    .mic-outer { width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, var(--red), var(--red-dark)); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; box-shadow: 0 4px 15px rgba(232,23,26,.3); }
+    .mic-outer.recording { animation: pulse 1s infinite; }
+    @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(232,23,26,.4); } 50% { box-shadow: 0 0 0 20px rgba(232,23,26,0); } }
+    .mic-icon { font-size: 32px; }
+    .record-hint { font-size: 13px; color: var(--gray); margin-top: 12px; }
+    .record-timer { font-size: 28px; font-weight: 600; color: var(--red); margin-top: 8px; }
+    .record-wave { display: flex; align-items: flex-end; justify-content: center; gap: 3px; height: 30px; margin-top: 12px; }
+    .rw-bar { width: 4px; background: var(--red); border-radius: 2px; animation: wave 1s ease-in-out infinite; }
+    @keyframes wave { 0%, 100% { height: 8px; } 50% { height: 24px; } }
+    .record-actions { display: flex; gap: 40px; margin-top: 20px; }
+    .ra-btn { text-align: center; cursor: pointer; }
+    .ra-circle { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 6px; }
+    .ra-circle.cancel { background: #f5f5f5; color: var(--gray); }
+    .ra-circle.confirm { background: #4caf50; color: #fff; }
+    .ra-label { font-size: 12px; color: var(--gray); }
+    .my-profile { background: var(--white); margin: 12px; border-radius: 12px; padding: 20px; display: flex; align-items: center; gap: 14px; box-shadow: 0 2px 6px rgba(0,0,0,.05); }
+    .avatar { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, var(--red), var(--red-dark)); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 22px; font-weight: 600; }
+    .profile-info { flex: 1; }
+    .profile-name { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+    .profile-role { font-size: 12px; color: var(--gray); background: #f0f0f0; padding: 3px 10px; border-radius: 10px; display: inline-block; }
+    .menu-list { background: var(--white); margin: 0 12px 12px; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,.05); }
+    .menu-item { display: flex; align-items: center; padding: 14px 16px; border-bottom: 1px solid #f5f5f5; cursor: pointer; }
+    .menu-item:last-child { border-bottom: none; }
+    .menu-icon { font-size: 20px; margin-right: 12px; }
+    .menu-text { flex: 1; font-size: 15px; }
+    .menu-chevron { color: var(--light-gray); font-size: 18px; }
+    .menu-badge { background: var(--red); color: #fff; font-size: 11px; padding: 2px 8px; border-radius: 10px; margin-right: 8px; }
+    .bottom-bar { background: var(--white); padding: 8px 16px; padding-bottom: max(8px, env(safe-area-inset-bottom)); flex-shrink: 0; border-top: 1px solid #eee; }
+    .join-bg { background: linear-gradient(180deg, var(--red) 0%, var(--red) 40%, var(--bg) 40%); min-height: 100%; display: flex; flex-direction: column; align-items: center; padding: 40px 20px 20px; }
+    .join-logo { width: 100px; height: 100px; background: var(--white); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 48px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,.15); }
+    .join-title { font-size: 24px; font-weight: 700; color: #fff; margin-bottom: 8px; text-align: center; }
+    .join-subtitle { font-size: 14px; color: rgba(255,255,255,.8); margin-bottom: 30px; }
+    .join-card { background: var(--white); border-radius: 16px; padding: 24px; width: 100%; box-shadow: 0 4px 20px rgba(0,0,0,.1); }
+    .join-form-item { margin-bottom: 16px; }
+    .join-form-label { font-size: 13px; color: var(--gray); margin-bottom: 6px; }
+    .join-form-input { width: 100%; border: 1px solid #ddd; border-radius: 8px; padding: 12px; font-size: 15px; outline: none; }
+    .join-form-input:focus { border-color: var(--red); }
+    .btn-join { width: 100%; background: var(--red); color: #fff; border: none; padding: 14px; border-radius: 25px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 10px; }
+    .join-footer { text-align: center; margin-top: 20px; font-size: 12px; color: var(--light-gray); }
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.5); display: none; align-items: flex-end; z-index: 1000; }
+    .modal-overlay.active { display: flex; }
+    .modal-content { background: var(--white); width: 100%; border-radius: 16px 16px 0 0; padding: 20px; animation: slideUp .3s ease; }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .modal-title { font-size: 16px; font-weight: 600; text-align: center; margin-bottom: 20px; }
+    .share-link-box { background: #f5f5f5; border-radius: 8px; padding: 12px; font-size: 13px; color: var(--gray); word-break: break-all; margin-bottom: 16px; }
+    .share-btn { width: 100%; background: #07c160; color: #fff; border: none; padding: 14px; border-radius: 25px; font-size: 16px; font-weight: 600; cursor: pointer; }
+    .toast { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,.75); color: #fff; padding: 12px 24px; border-radius: 8px; font-size: 14px; z-index: 9999; display: none; }
+    .toast.show { display: block; }
+    .loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9998; }
+    .loading-spinner { width: 50px; height: 50px; border: 4px solid #f0f0f0; border-top-color: var(--red); border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { margin-top: 16px; font-size: 14px; color: var(--gray); }
+    .audio-player { margin-top: 8px; display: flex; align-items: center; gap: 8px; background: #f5f5f5; border-radius: 20px; padding: 6px 12px; width: fit-content; }
+    .audio-player audio { height: 24px; }
+    .share-audio-btn { background: var(--red); color: #fff; border: none; padding: 4px 10px; border-radius: 12px; font-size: 11px; cursor: pointer; }
+    .rank-card { background: var(--white); margin: 12px; border-radius: 12px; padding: 16px; box-shadow: 0 2px 6px rgba(0,0,0,.05); }
+    .rank-card h3 { font-size: 15px; margin-bottom: 16px; text-align: center; }
+    .rank-podium { display: flex; justify-content: center; align-items: flex-end; gap: 8px; margin-bottom: 20px; }
+    .podium-item { text-align: center; }
+    .podium-avatar { width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, var(--red), var(--red-dark)); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; font-weight: 600; margin: 0 auto 6px; }
+    .podium-name { font-size: 12px; margin-bottom: 4px; }
+    .podium-count { font-size: 14px; font-weight: 600; color: var(--red); }
+    .podium-block { font-size: 28px; }
+    .p1 .podium-avatar { width: 60px; height: 60px; font-size: 22px; }
+    .p1 .podium-block { font-size: 36px; }
+    .rank-row { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #f5f5f5; }
+    .rank-num { width: 24px; font-size: 14px; font-weight: 600; color: var(--gray); text-align: center; }
+    .rank-avatar-sm { width: 36px; height: 36px; border-radius: 50%; background: var(--red); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; margin-right: 10px; }
+    .rank-name { flex: 1; font-size: 14px; }
+    .rank-score { font-size: 14px; font-weight: 600; color: var(--red); }
+    .form-wrap { padding: 16px; }
+    .form-item { margin-bottom: 20px; }
+    .form-label { font-size: 14px; font-weight: 600; margin-bottom: 8px; display: block; }
+    .form-input { width: 100%; border: 1px solid #ddd; border-radius: 8px; padding: 12px; font-size: 14px; outline: none; }
+    .btn-half { width: 48%; padding: 12px; border-radius: 25px; font-size: 15px; font-weight: 600; cursor: pointer; border: none; }
+    .btn-cancel { background: #f5f5f5; color: var(--gray); }
+    .btn-primary { background: var(--red); color: #fff; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="loading-overlay" id="loading">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">正在连接云端...</div>
+    </div>
+
+    <div class="page active" id="page-join">
+      <div class="join-bg">
+        <div class="join-logo">📖</div>
+        <div class="join-title">📖《干法》完整版</div>
+        <div class="join-subtitle" style="font-size:12px;color:#666;margin-top:4px">东莞市永耀传动科技有限公司</div>
+        <div class="join-subtitle">读书会打卡</div>
+        <div class="join-card">
+          <div class="join-form-item">
+            <div class="join-form-label">姓名</div>
+            <input class="join-form-input" id="join-name" placeholder="请输入您的姓名">
+          </div>
+          <div class="join-form-item">
+            <div class="join-form-label">部门</div>
+            <input class="join-form-input" id="join-dept" placeholder="请输入您的部门">
+          </div>
+          <button class="btn-join" onclick="joinClub()">立即加入读书会</button>
+        </div>
+        <div class="join-footer">已接入云端 · 数据安全存储</div>
+      </div>
+    </div>
+
+    <div class="page" id="page-home">
+      <div class="home-header">
+        <div class="home-title" id="home-welcome">📖 读书会打卡</div>
+        <div class="home-subtitle">📖《干法》完整版 · 稻盛和夫</div>
+        <div class="home-stats">
+          <div class="stat-item"><div class="stat-num" id="stat-members">-</div><div class="stat-label">成员</div></div>
+          <div class="stat-item"><div class="stat-num" id="stat-checked">-</div><div class="stat-label">今日打卡</div></div>
+          <div class="stat-item"><div class="stat-num" id="stat-total">-</div><div class="stat-label">总打卡</div></div>
+        </div>
+      </div>
+      <div class="scroll-content">
+        <div class="calendar-container">
+          <div class="calendar-header">
+            <div class="calendar-title"><span id="calendar-month">2026年4月</span></div>
+            <div class="calendar-nav"><span onclick="changeMonth(-1)">‹</span><span onclick="changeMonth(1)">›</span></div>
+          </div>
+          <div class="calendar-weekday"><div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div></div>
+          <div class="calendar-grid" id="calendar-grid"></div>
+        </div>
+        <div class="book-info-bar">
+          <div class="book-cover-sm">稻盛<br>和夫<br>干法</div>
+          <div class="book-detail">
+            <div class="book-name">《干法》</div>
+            <div class="book-progress" id="book-progress">已读 0/18 天</div>
+            <div class="book-progress-bar"><div class="book-progress-fill"></div></div>
+          </div>
+        </div>
+        <div id="task-container"></div>
+        <div class="tab-bar">
+          <div class="tab-item active" onclick="switchTab('home')">🏠 首页</div>
+          <div class="tab-item" onclick="switchTab('rank')">🏆 排行</div>
+          <div class="tab-item" onclick="switchTab('my')">👤 我的</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-record">
+      <div class="header">
+        <div class="header-left"><span class="back-btn" onclick="goBack()">‹</span></div>
+        <div class="header-title">录音打卡</div>
+        <div class="header-right"></div>
+      </div>
+      <div class="scroll-content">
+        <div class="task-card" style="text-align:center">
+          <div style="font-size:16px;font-weight:600;margin-bottom:4px">📚 《干法》稻盛和夫</div>
+          <div class="recording-chapter" id="rec-chapter" style="color:var(--red);margin-bottom:8px">-</div>
+          <div class="recording-date" id="rec-date" style="font-size:12px;color:var(--gray)">📅 -</div>
+        </div>
+        <div class="task-card">
+          <div class="record-area">
+            <div style="font-size:13px;color:var(--gray);margin-bottom:16px">长按麦克风开始录音，松开结束</div>
+            <div class="mic-outer" id="mic-btn" onmousedown="startRecord()" onmouseup="stopRecord()" ontouchstart="startRecord(event)" ontouchend="stopRecord(event)">
+              <span class="mic-icon">🎙️</span>
+            </div>
+            <div class="record-hint" id="record-hint">按住录音</div>
+            <div class="record-timer" id="record-timer">00:00</div>
+            <div class="record-wave" id="record-wave" style="visibility:hidden">
+              <div class="rw-bar"></div><div class="rw-bar"></div><div class="rw-bar"></div>
+              <div class="rw-bar"></div><div class="rw-bar"></div><div class="rw-bar"></div><div class="rw-bar"></div>
+            </div>
+            <div class="record-actions" id="record-actions" style="display:none">
+              <div class="ra-btn" onclick="cancelRecord()"><div class="ra-circle cancel">✕</div><span class="ra-label">取消</span></div>
+              <div class="ra-btn" onclick="submitRecord()"><div class="ra-circle confirm">✓</div><span class="ra-label">提交</span></div>
+            </div>
+          </div>
+        </div>
+        <div style="padding:16px;background:#fff;border-top:1px solid #f0f0f0">
+          <div style="font-size:14px;font-weight:600;margin-bottom:10px">✏️ 文字心得（选填）</div>
+          <textarea id="record-text" style="width:100%;height:80px;border:1px solid #e0e0e0;border-radius:10px;padding:12px;font-size:14px;resize:none;outline:none" placeholder="写下你的读书感悟..."></textarea>
+        </div>
+      </div>
+      <div class="bottom-bar">
+        <button class="btn-full" onclick="submitRecord()">提交打卡</button>
+      </div>
+    </div>
+
+    <div class="page" id="page-rank">
+      <div class="header"><div class="header-left"></div><div class="header-title">打卡排行榜</div><div class="header-right"></div></div>
+      <div class="scroll-content">
+        <div class="rank-card">
+          <h3>🏆 本月打卡排行榜</h3>
+          <div class="rank-podium" id="rank-podium"></div>
+          <div class="rank-list" id="rank-list"></div>
+        </div>
+        <div class="tab-bar">
+          <div class="tab-item" onclick="switchTab('home')">🏠 首页</div>
+          <div class="tab-item active" onclick="switchTab('rank')">🏆 排行</div>
+          <div class="tab-item" onclick="switchTab('my')">👤 我的</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-my">
+      <div class="header"><div class="header-left"></div><div class="header-title">我的</div><div class="header-right"></div></div>
+      <div class="scroll-content">
+        <div class="my-profile">
+          <div class="avatar" id="my-avatar">-</div>
+          <div class="profile-info">
+            <div class="profile-name" id="my-name">-</div>
+            <div class="profile-role" id="my-dept">-</div>
+          </div>
+        </div>
+        <div class="menu-list">
+          <div class="menu-item" onclick="showShareModal()"><span class="menu-icon">🔗</span><span class="menu-text">邀请同事加入</span><span class="menu-chevron">›</span></div>
+          <div class="menu-item" onclick="showMyRecords()"><span class="menu-icon">📊</span><span class="menu-text">我的打卡记录</span><span class="menu-chevron">›</span></div>
+          <div class="menu-item"><span class="menu-icon">📚</span><span class="menu-text">已读章节</span><span class="menu-badge" id="read-count">0章</span><span class="menu-chevron">›</span></div>
+        </div>
+        <div class="menu-list">
+          <div class="menu-item" onclick="downloadCSV()" style="background:#fff3e0"><span class="menu-icon">📥</span><span class="menu-text" style="color:var(--red);font-weight:600">导出打卡记录</span><span class="menu-chevron">›</span></div>
+          <div class="menu-item" onclick="window.location.href='admin.html'"><span class="menu-icon">👑</span><span class="menu-text">管理后台</span><span class="menu-chevron">›</span></div>
+        </div>
+        <div class="tab-bar">
+          <div class="tab-item" onclick="switchTab('home')">🏠 首页</div>
+          <div class="tab-item" onclick="switchTab('rank')">🏆 排行</div>
+          <div class="tab-item active" onclick="switchTab('my')">👤 我的</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-rule">
+      <div class="header"><div class="header-left"><span class="back-btn" onclick="goBack()">‹</span></div><div class="header-title">设置打卡内容</div><div class="header-right"></div></div>
+      <div class="scroll-content">
+        <div class="form-wrap">
+          <div class="form-item"><label class="form-label">书籍名称</label><input class="form-input" id="rule-book" placeholder="如：《干法》"></div>
+          <div class="form-item"><label class="form-label">章节标题</label><input class="form-input" id="rule-chapter" placeholder="如：P032-P034"></div>
+          <div class="form-item"><label class="form-label">打卡日期</label><input class="form-input" type="date" id="rule-date"></div>
+          <div class="form-item"><label class="form-label">章节内容</label><textarea class="form-input" id="rule-content" rows="6" placeholder="请粘贴内容..."></textarea></div>
+          <div style="display:flex;gap:4%">
+            <button class="btn-half btn-cancel" onclick="goBack()">取消</button>
+            <button class="btn-half btn-primary" onclick="saveRule()">保存</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="my-records-modal" onclick="closeMyRecords(event)">
+      <div class="modal-content" onclick="event.stopPropagation()" style="max-height:80vh;overflow-y:auto">
+        <div class="modal-title">我的打卡记录</div>
+        <div id="my-records-list"></div>
+        <div style="text-align:center;margin-top:16px"><span onclick="closeMyRecords()" style="color:var(--gray);cursor:pointer">关闭</span></div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="share-modal" onclick="closeShareModal(event)">
+      <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-title">邀请同事加入</div>
+        <div class="share-link-box" id="share-link">-</div>
+        <button class="share-btn" onclick="copyLink()">📋 复制链接</button>
+        <div style="text-align:center;margin-top:12px"><span onclick="closeShareModal()" style="color:var(--gray);cursor:pointer">关闭</span></div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="audio-share-modal" onclick="closeAudioShareModal(event)">
+      <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-title">分享录音</div>
+        <div class="share-link-box" id="audio-share-link">-</div>
+        <button class="share-btn" onclick="copyAudioLink()">📋 复制链接</button>
+        <div style="text-align:center;margin-top:12px"><span style="color:var(--gray);font-size:12px">链接永久有效</span></div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+  </div>
+
+  <script>
+    const SPACE_ID = "mp-b2be9018-6e45-4c71-9e09-c26926791d3a";
+    let app, db;
+    const STORAGE_KEYS = { USER: 'yy_user_unicloud' };
+    
+    function initCloud() {
+      app = cloudbase.init({ env: SPACE_ID });
+      db = app.database();
+      document.getElementById('loading').style.display = 'none';
+      checkUser();
+    }
+    window.onload = initCloud;
+    
+    function getUserInfo() { const d = localStorage.getItem(STORAGE_KEYS.USER); return d ? JSON.parse(d) : null; }
+    function saveUserInfo(name, dept) { const u = { name, dept, t: Date.now() }; localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(u)); return u; }
+
+    const bookContent = {
+      '2026-04-08': { chapter: '第一章① 为什么要工作', content: '<p><strong>人为什么要工作？</strong>稻盛和夫得出了重要结论：<strong>工作能够磨炼灵魂，提升心志</strong>。</p><p>理解工作的意义，全身心投入工作，你就能拥有幸福的人生。</p><p style="color:#e8171a"><strong>思考：你是否曾从工作中获得过超越物质的精神满足？</strong></p>' },
+      '2026-04-09': { chapter: '第一章② 极度认真过好每一天', content: '<p><strong>人生・工作的结果 = 思维方式 × 热情 × 能力</strong></p><p>思维方式最为重要，决定了人生的方向。</p><p>要保持正确的思维方式，最有效的方法就是<strong>"极度认真地过好每一天"</strong>。</p><p style="color:#e8171a"><strong>实践：今天，请极度认真地完成手头的每一项工作。</strong></p>' },
+      '2026-04-10': { chapter: '第一章③ 年轻时的苦难是财富', content: '<p>稻盛和夫的人生并非一帆风顺。但正是苦难经历，成为了他成功的基石。</p><p>他意识到，只要认真去做，就一定能够取得成果。</p><p><strong>苦难是考验，逆境是成长。年轻时候的苦难经历，是人生最宝贵的财富。</strong></p><p style="color:#e8171a"><strong>反思：你工作中遇到过的最大"苦难"是什么？</strong></p>' },
+      '2026-04-11': { chapter: '第二章① 改变"混混"的心态', content: '<p>很多人抱着"混混"的心态对待工作。其实，要么从事喜欢的工作，要么让自己喜欢上工作。</p><p><strong>从今天开始，改变你的心态。告诉自己：太好了，有这个机会可以磨练自己。</strong></p><p style="color:#e8171a"><strong>行动：写下三件你工作中值得喜欢的地方。</strong></p>' },
+      '2026-04-12': { chapter: '第二章② 成为"自燃型"的人', content: '<p>稻盛和夫把人分为三种：可燃型、不燃型、自燃型。</p><p><strong>自燃型</strong>的人不需要别人督促，自己就能主动、积极地投入工作。</p><p>当你对某项工作产生兴趣，付出努力并取得成果，就会感到满足，形成良性循环。</p><p style="color:#e8171a"><strong>自问：你是哪种类型的人？愿意做出改变吗？</strong></p>' },
+      '2026-04-13': { chapter: '第二章③ 持续付出不亚于任何人的努力', content: '<p>"<strong>持续付出不亚于任何人的努力</strong>"——这是成功的第一要素。</p><p>几十年来拼命工作，这才是成功的秘诀。</p><p><strong>当你小有成就时，请记住：只有继续保持谦逊，持续努力，才能取得真正的成功。</strong></p><p style="color:#e8171a"><strong>行动：今天开始，制定一个持续努力的计划。</strong></p>' },
+      '2026-04-14': { chapter: '第三章① 设定期限，付诸行动', content: '<p>稻盛和夫提出看似疯狂的目标：<strong>成为"街道第一"</strong>。正是这个目标，激发了全体员工的斗志。</p><p><strong>没有期限的梦想，只是空想</strong>。只有设定了具体的期限，才能真正付诸行动。</p><p><strong>首先相信自己一定能够实现</strong>，然后把高目标分解成可执行的行动计划。</p><p style="color:#e8171a"><strong>思考：你敢不敢给自己设定一个"看起来不可能"的目标？</strong></p>' },
+      '2026-04-15': { chapter: '第三章② 你必须得这样想', content: '<p>稻盛和夫说：<strong>如果你在头脑里"想"得不够充分，就不可能在实际行动中取得成功</strong>。</p><p>你首先必须在内心深处"看到"目标实现的场景。</p><p><strong>请大胆地想象成功的场景，在脑海中反复描绘。当你真正"看到"成功的那一刻，也许奇迹就会发生。</strong></p><p style="color:#e8171a"><strong>行动：闭上眼睛，详细描绘目标实现后的场景。</strong></p>' },
+      '2026-04-16': { chapter: '第三章③ 当你竭尽全力时，神灵将会现身', content: '<p>每当稻盛和夫在"尽人事"之后，总会迎来"柳暗花明"的转机。</p><p><strong>当你真正拼尽全力时，你会发现：</strong></p><p>• 原来自己还有这么大的潜能<br>• 原来困难并没有想象中那么可怕<br>• 原来机会总是在最艰难的时刻出现</p><p style="color:#e8171a"><strong>记住：当你真的竭尽全力时，神灵将会现身。</strong></p>' },
+      '2026-04-17': { chapter: '第四章① 今天要比昨天更好', content: '<p>"<strong>持续就是力量</strong>"——这是最重要的成功哲学之一。</p><p>每天进步一点点，经过长期积累，就能在不知不觉中取得惊人的成就。</p><p><strong>京瓷公司要求每位员工"今天要比昨天更好"</strong>。不需要翻天覆地的改变，只需每天进步一点点。</p><p style="color:#e8171a"><strong>行动：记录每天的进步，月末回顾时你会有惊喜。</strong></p>' },
+      '2026-04-18': { chapter: '第四章② 全力过好今天这一天', content: '<p><strong>我们唯一能够把握的只有"今天"</strong>。与其担心未来，不如全力以赴过好今天。</p><p><strong>第一</strong>，设定具体的目标。今天要完成什么？<br><strong>第二</strong>，全身心投入。<br><strong>第三</strong>，今日事今日毕。</p><p><strong>未来是由无数个"今天"组成的。把握好每一个今天，就是把握好了整个人生。</strong></p><p style="color:#e8171a"><strong>行动：制定明天的计划，明确今天结束前要完成的三件事。</strong></p>' },
+      '2026-04-19': { chapter: '第四章③ "的能力将平凡化为非凡', content: '<p>什么是"<strong>的能力</strong>"？就是"专注于一行一业"的能力。</p><p>乌龟虽然爬得慢，但只要坚持不懈地前进，最终一定会超过中途睡觉的兔子。</p><p><strong>选择领域、全身心投入、不被诱惑所动</strong>——当你把工作做到极致，平凡的工作也会变得非凡。</p><p style="color:#e8171a"><strong>思考：你的工作中，有没有什么事情是你愿意用一辈子去精进的？</strong></p>' },
+      '2026-04-20': { chapter: '第五章① 出色工作产生于完美主义', content: '<p><strong>出色的工作产生于完美主义</strong>。在产品制造中，99%的努力都是不够的，只有100%才是合格。</p><p>"差不多"累积起来，就是巨大的差距。</p><p><strong>在工作中，我们应该时刻保持"完美主义"的态度。不是"差不多了"，而是"必须完美"。</strong></p><p style="color:#e8171a"><strong>行动：检查你手头的工作，有没有什么是"差不多就行"的心态？</strong></p>' },
+      '2026-04-21': { chapter: '第五章② 完美主义的关键是注重细节', content: '<p>稻盛和夫说：<strong>完美主义最重要的是注重细节</strong>。作品的"死"通常隐藏在细节之中。</p><p><strong>完成工作后要仔细检查，不放过任何一个可疑之处。</strong></p><p>要从客户的角度看问题，想象客户最在意什么。</p><p style="color:#e8171a"><strong>行动：检查你最近完成的工作，找出至少一个可以改进的细节。</strong></p>' },
+      '2026-04-22': { chapter: '第五章③ 创造性的工作', content: '<p>稻盛和夫主张：<strong>即使是最简单的工作，也要每天思考"有没有更好的方法"</strong>。</p><p><strong>创新不是天才的专利，而是每个人都可以培养的能力。</strong>关键在于，你愿不愿意每天多想一点点，多试一点点。</p><p>敢于质疑现有流程，善于学习其他行业的经验，保持好奇心，勇于尝试新事物。</p><p style="color:#e8171a"><strong>行动：想一想，你的工作中有哪些地方可以做得不一样？</strong></p>' },
+      '2026-04-23': { chapter: '第六章① 敢于走"别人没走过的路"', content: '<p><strong>敢于走"别人没走过的路"</strong>。人容易随大流，但真正的创新，往往产生于"走别人没走过的路"。</p><p><strong>要走别人没走过的路，需要：</strong></p><p>• 敏锐的观察力<br>• 独立的思考<br>• 敢于冒险的勇气</p><p style="color:#e8171a"><strong>思考：你现在走的路，是"别人走过的路"还是"别人没走过的路"？</strong></p>' },
+      '2026-04-24': { chapter: '第六章② "扫地"变革——从小事做起', content: '<p>稻盛和夫问员工："你们打算一直这样扫地吗？<br>然后他说：<strong>扫地也要开动脑筋</strong>。怎样把地扫得又快又好？</p><p><strong>无论多么微小的事情，只要开动脑筋，都能够找到改进的空间。</strong>正是这些点滴的改进，最终汇聚成巨大的变革。</p><p style="color:#e8171a"><strong>行动：今天工作时，注意观察：有没有什么事情可以做得更好？</strong></p>' },
+      '2026-04-25': { chapter: '第六章③ 人生・工作的结果取决于正确的活法', content: '<p><strong>人生・工作的结果 = 思维方式 × 热情 × 能力</strong></p><p><strong>思维方式六条：</strong></p><p>1. 付出不亚于任何人的努力<br>2. 谦虚戒骄<br>3. 天天反省<br>4. 活着就要感谢<br>5. 积善行、思利他<br>6. 不要有感性的烦恼</p><p><strong>愿每一个读过这本书的人，都能够度过一个充实而有意义的人生。</strong></p><p style="color:#e8171a"><strong>总结：读完全书后，你最大的收获是什么？打算如何实践？</strong></p>' }
+    };
+
+    let selectedDate = '2026-04-08';
+    let currentMonth = new Date();
+    let mediaRecorder, audioChunks = [], recordingTimer, recordingSeconds = 0, isRecording = false;
+    let currentAudioUrl = '';
+
+    function showPage(id) { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById('page-' + id).classList.add('active'); }
+    function goBack() { showPage('home'); }
+    function switchTab(tab) { showPage(tab === 'home' ? 'home' : (tab === 'rank' ? 'rank' : 'my')); }
+
+    function checkUser() {
+      const u = getUserInfo();
+      if (u) {
+        document.getElementById('my-name').textContent = u.name;
+        document.getElementById('my-avatar').textContent = u.name.charAt(0);
+        document.getElementById('my-dept').textContent = u.dept;
+        document.getElementById('home-welcome').textContent = u.name + ' 您好！';
+        showPage('home');
+        loadAllData();
+      }
+    }
+
+    function joinClub() {
+      const name = document.getElementById('join-name').value.trim() || '员工';
+      const dept = document.getElementById('join-dept').value.trim() || '未填写部门';
+      saveUserInfo(name, dept);
+      document.getElementById('my-name').textContent = name;
+      document.getElementById('my-avatar').textContent = name.charAt(0);
+      document.getElementById('my-dept').textContent = dept;
+      document.getElementById('home-welcome').textContent = name + ' 您好！';
+      showPage('home');
+      loadAllData();
+      showToast('加入成功！');
+    }
+
+    async function loadAllData() {
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        const [todayR, totalR, allR] = await Promise.all([
+          db.collection('punch_records').where({ date: today }).count(),
+          db.collection('punch_records').count(),
+          db.collection('punch_records').get()
+        ]);
+        const users = [...new Set(allR.data.map(r => r.userName))];
+        document.getElementById('stat-members').textContent = users.length || 0;
+        document.getElementById('stat-checked').textContent = todayR.total || 0;
+        document.getElementById('stat-total').textContent = totalR.total || 0;
+        renderCalendar();
+        await updateTaskContent();
+        updateRank(allR.data);
+      } catch (e) { renderCalendar(); updateTaskContent(); }
+    }
+
+    async function isUserCheckedIn(date) {
+      const u = getUserInfo();
+      if (!u) return false;
+      try {
+        const r = await db.collection('punch_records').where({ date: date, userName: u.name }).get();
+        return r.data && r.data.length > 0;
+      } catch (e) { return false; }
+    }
+
+    async function getDayRecords(date) {
+      try {
+        const r = await db.collection('punch_records').where({ date: date }).get();
+        return r.data || [];
+      } catch (e) { return []; }
+    }
+
+    function renderCalendar() {
+      const grid = document.getElementById('calendar-grid');
+      const year = currentMonth.getFullYear();
+      const month = currentMonth.getMonth();
+      document.getElementById('calendar-month').textContent = year + '年' + (month + 1) + '月';
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const today = new Date();
+      let html = '';
+      for (let i = 0; i < firstDay; i++) html += '<div class="calendar-day empty"></div>';
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+        const isToday = year === today.getFullYear() && month === today.getMonth() && d === today.getDate();
+        const hasTask = bookContent[dateStr];
+        let cls = 'calendar-day';
+        if (isToday) cls += ' today';
+        if (hasTask) cls += ' has-task';
+        html += '<div class="' + cls + '" onclick="selectDate(\'' + dateStr + '\')">' + d + '</div>';
+      }
+      grid.innerHTML = html;
+    }
+
+    function changeMonth(delta) { currentMonth.setMonth(currentMonth.getMonth() + delta); renderCalendar(); updateTaskContent(); }
+
+    async function selectDate(dateStr) {
+      selectedDate = dateStr;
+      renderCalendar();
+      await updateTaskContent();
+      showPage('home');
+    }
+
+    async function updateTaskContent() {
+      const c = document.getElementById('task-container');
+      const content = bookContent[selectedDate];
+      if (!content) { c.innerHTML = '<div class="task-card" style="text-align:center;padding:30px"><div style="color:var(--gray)">该日期暂无打卡任务</div></div>'; return; }
+      const today = new Date().toISOString().split('T')[0];
+      const isToday = selectedDate === today;
+      const isChecked = await isUserCheckedIn(selectedDate);
+      const dayRecords = await getDayRecords(selectedDate);
+      let recordsHtml = '';
+      if (dayRecords.length > 0) {
+        recordsHtml = '<div class="task-card"><div style="font-weight:600;margin-bottom:10px">📋 打卡记录</div>';
+        dayRecords.forEach(r => {
+          recordsHtml += '<div style="display:flex;align-items:flex-start;padding:10px 0;border-bottom:1px solid #f5f5f5"><div style="width:36px;height:36px;border-radius:50%;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;margin-right:12px;flex-shrink:0">' + r.userName.charAt(0) + '</div><div style="flex:1"><div style="display:flex;justify-content:space-between"><span style="font-weight:600">' + r.userName + '</span><span style="color:var(--gray);font-size:12px">' + (r.department || '') + '</span></div>';
+          if (r.audioUrl) recordsHtml += '<div class="audio-player"><audio src="' + r.audioUrl + '" controls></audio><button class="share-audio-btn" onclick="shareAudio(\'' + r.audioUrl + '\')">分享</button></div>';
+          if (r.content) recordsHtml += '<div style="margin-top:6px;font-size:13px;background:#fafafa;padding:8px;border-radius:6px">' + r.content.substring(0, 100) + '</div>';
+          recordsHtml += '</div></div>';
+        });
+        recordsHtml += '</div>';
+      }
+      let btn = '';
+      if (!isToday) btn = '<button class="btn-punchcard checked" disabled>⏰ 不可补卡</button>';
+      else if (isChecked) btn = '<button class="btn-punchcard checked" disabled>✓ 已打卡</button>';
+      else btn = '<button class="btn-punchcard" onclick="goToRecord()">立即打卡</button>';
+      c.innerHTML = '<div class="task-card"><div class="task-header"><span class="task-date-badge">' + selectedDate + '</span><span class="task-chapter">' + content.chapter + '</span></div><div class="task-content">' + content.content + '</div><div class="task-footer"><span class="task-stats">✅ 已打卡：' + dayRecords.length + '人</span>' + btn + '</div></div>' + recordsHtml;
+    }
+
+    function goToRecord() {
+      const today = new Date().toISOString().split('T')[0];
+      if (selectedDate !== today) { showToast('只能打卡当天内容！'); return; }
+      const content = bookContent[selectedDate];
+      if (content) {
+        document.getElementById('rec-chapter').textContent = content.chapter;
+        document.getElementById('rec-date').textContent = '📅 ' + selectedDate;
+      }
+      showPage('record');
+    }
+
+    async function startRecord(e) {
+      if (e) e.preventDefault();
+      if (isRecording) return;
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+        mediaRecorder.start();
+        isRecording = true;
+        document.getElementById('mic-btn').classList.add('recording');
+        document.getElementById('record-wave').style.visibility = 'visible';
+        document.getElementById('record-hint').textContent = '正在录音...';
+        recordingSeconds = 0;
+        recordingTimer = setInterval(() => {
+          recordingSeconds++;
+          document.getElementById('record-timer').textContent = String(Math.floor(recordingSeconds / 60)).padStart(2, '0') + ':' + String(recordingSeconds % 60).padStart(2, '0');
+        }, 1000);
+      } catch (err) { showToast('请允许麦克风权限'); }
+    }
+
+    function stopRecord(e) {
+      if (e) e.preventDefault();
+      if (!isRecording) return;
+      mediaRecorder?.stop();
+      isRecording = false;
+      clearInterval(recordingTimer);
+      document.getElementById('mic-btn').classList.remove('recording');
+      document.getElementById('record-wave').style.visibility = 'hidden';
+      document.getElementById('record-hint').textContent = '录音完成';
+      document.getElementById('record-actions').style.display = 'flex';
+    }
+
+    function cancelRecord() {
+      audioChunks = [];
+      document.getElementById('record-timer').textContent = '00:00';
+      document.getElementById('record-hint').textContent = '按住录音';
+      document.getElementById('record-actions').style.display = 'none';
+      showToast('已取消');
+    }
+
+    async function submitRecord() {
+      const u = getUserInfo();
+      if (!u) { showToast('请先加入读书会'); showPage('page-join'); return; }
+      const text = document.getElementById('record-text').value || '';
+      const mins = String(Math.floor(recordingSeconds / 60)).padStart(2, '0');
+      const secs = String(recordingSeconds % 60).padStart(2, '0');
+      const duration = recordingSeconds > 0 ? mins + ':' + secs : '';
+      let audioUrl = '';
+      if (audioChunks.length > 0) {
+        const blob = new Blob(audioChunks, { type: 'audio/mp3' });
+        try {
+          showToast('正在上传录音...');
+          const cloudPath = 'audio/' + Date.now() + '.mp3';
+          const uploadRes = await app.uploadFile({ cloudPath: cloudPath, filePath: blob });
+          const urlRes = await app.getTempFileURL({ fileList: [uploadRes.fileID] });
+          audioUrl = urlRes.fileList[0].tempFileURL;
+        } catch (e) { console.error('上传失败', e); }
+      }
+      try {
+        await db.collection('punch_records').add({
+          userName: u.name,
+          department: u.dept,
+          date: selectedDate,
+          content: text,
+          audioUrl: audioUrl,
+          audioDuration: duration,
+          createTime: new Date()
+        });
+        showToast('打卡成功！');
+      } catch (e) { showToast('保存失败'); return; }
+      audioChunks = [];
+      recordingSeconds = 0;
+      document.getElementById('record-timer').textContent = '00:00';
+      document.getElementById('record-text').value = '';
+      document.getElementById('record-actions').style.display = 'none';
+      document.getElementById('record-hint').textContent = '按住录音';
+      loadAllData();
+      setTimeout(() => showPage('home'), 1000);
+    }
+
+    function shareAudio(url) { currentAudioUrl = url; document.getElementById('audio-share-link').textContent = url; document.getElementById('audio-share-modal').classList.add('active'); }
+    function closeAudioShareModal(e) { if (e && e.target !== e.currentTarget) return; document.getElementById('audio-share-modal').classList.remove('active'); }
+    function copyAudioLink() { navigator.clipboard?.writeText(currentAudioUrl).then(() => showToast('链接已复制')); }
+
+    function showShareModal() { document.getElementById('share-link').textContent = window.location.href.split('?')[0]; document.getElementById('share-modal').classList.add('active'); }
+    function closeShareModal(e) { if (e && e.target !== e.currentTarget) return; document.getElementById('share-modal').classList.remove('active'); }
+    function copyLink() { navigator.clipboard?.writeText(document.getElementById('share-link').textContent).then(() => showToast('链接已复制')); }
+
+    function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2000); }
+
+    function saveRule() {
+      const book = document.getElementById('rule-book').value;
+      const chapter = document.getElementById('rule-chapter').value;
+      const date = document.getElementById('rule-date').value;
+      const content = document.getElementById('rule-content').value;
+      if (book && chapter && date && content) {
+        bookContent[date] = { chapter, content: '<p>' + content + '</p>' };
+        showToast('保存成功！');
+        goBack();
+        renderCalendar();
+        updateTaskContent();
+      } else { showToast('请填写完整信息'); }
+    }
+
+    async function showMyRecords() {
+      const u = getUserInfo();
+      if (!u) { showToast('请先加入读书会'); showPage('page-join'); return; }
+      try {
+        const r = await db.collection('punch_records').where({ userName: u.name }).get();
+        const myRecords = r.data.sort((a, b) => new Date(b.createTime) - new Date(a.createTime));
+        const el = document.getElementById('my-records-list');
+        if (myRecords.length === 0) el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--gray)">暂无打卡记录</div>';
+        else {
+          el.innerHTML = myRecords.map(rec => '<div style="padding:12px;border-bottom:1px solid #f0f0f0"><div style="font-weight:600;color:var(--red)">' + rec.date + '</div><div style="font-size:13px;margin:4px 0">' + (bookContent[rec.date]?.chapter || '') + '</div>' + (rec.audioUrl ? '<div class="audio-player"><audio src="' + rec.audioUrl + '" controls></audio></div>' : '') + (rec.content ? '<div style="font-size:12px;color:var(--gray);background:#f8f8f8;padding:8px;border-radius:6px;margin-top:6px">' + rec.content + '</div>' : '') + '</div>').join('');
+        }
+        document.getElementById('read-count').textContent = myRecords.length + '天';
+      } catch (e) {}
+      document.getElementById('my-records-modal').classList.add('active');
+    }
+    function closeMyRecords(e) { if (e && e.target !== e.currentTarget) return; document.getElementById('my-records-modal').classList.remove('active'); }
+
+    function updateRank(records) {
+      const users = {};
+      records.forEach(r => { if (!users[r.userName]) users[r.userName] = { name: r.userName, count: 0 }; users[r.userName].count++; });
+      const sorted = Object.values(users).sort((a, b) => b.count - a.count);
+      document.getElementById('rank-podium').innerHTML = sorted.slice(0, 3).map((u, i) => '<div class="podium-item"><div class="podium-avatar">' + u.name.charAt(0) + '</div><div class="podium-name">' + u.name + '</div><div class="podium-count">' + u.count + '次</div><div class="podium-block">' + ['🥇', '🥈', '🥉'][i] + '</div></div>').join('');
+      document.getElementById('rank-list').innerHTML = sorted.slice(3).map((u, i) => '<div class="rank-row"><div class="rank-num">' + (i + 4) + '</div><div class="rank-avatar-sm">' + u.name.charAt(0) + '</div><div class="rank-name">' + u.name + '</div><div class="rank-score">' + u.count + '次</div></div>').join('');
+    }
+
+    async function downloadCSV() {
+      try {
+        const r = await db.collection('punch_records').get();
+        let csv = '日期,姓名,部门,时间,录音,心得\n';
+        r.data.forEach(rec => {
+          csv += '"' + rec.date + '","' + rec.userName + '","' + (rec.department || '') + '","' + (rec.createTime ? new Date(rec.createTime).toLocaleString('zh-CN') : '') + '","' + (rec.audioUrl || '') + '","' + (rec.content || '').replace(/"/g, '""') + '"\n';
+        });
+        const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = '永耀读书会_' + new Date().toISOString().split('T')[0] + '.csv';
+        a.click();
+        showToast('导出成功！');
+      } catch (e) { showToast('导出失败'); }
+    }
+  </script>
+</body>
+</html>

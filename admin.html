@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理后台</title>
+  <script src="https://static-mp-b2be9018-6e45-4c71-9e09-c26926791d3a.cloudbase.cn/cloudbase-js-sdk/2.6.1/cloudbase.full.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, sans-serif; background: #f5f5f5; color: #333; }
+    .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+    .header { background: #e8171a; color: #fff; padding: 20px; text-align: center; border-radius: 12px; margin-bottom: 20px; }
+    .card { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+    .card h3 { font-size: 16px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #eee; }
+    .stats { display: flex; gap: 16px; }
+    .stat { flex: 1; text-align: center; padding: 16px; background: #f8f8f8; border-radius: 8px; }
+    .stat-num { font-size: 28px; font-weight: 700; color: #e8171a; }
+    .stat-label { font-size: 12px; color: #666; margin-top: 4px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px 6px; text-align: left; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
+    th { background: #f8f8f8; font-weight: 600; }
+    .btn { padding: 10px 20px; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; background: #e8171a; color: #fff; width: 100%; }
+    .back-link { display: inline-block; padding: 10px 20px; background: #fff; border-radius: 8px; color: #e8171a; text-decoration: none; margin-bottom: 20px; }
+    .search { margin-bottom: 16px; }
+    .search input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
+    audio { height: 24px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="index-unicloud.html" class="back-link">← 返回打卡页面</a>
+    <div class="header">
+      <h1>👑 管理后台</h1>
+      <p>永耀传动读书会</p>
+    </div>
+    <div class="card">
+      <h3>📊 数据统计</h3>
+      <div class="stats">
+        <div class="stat"><div class="stat-num" id="total-members">-</div><div class="stat-label">参与人数</div></div>
+        <div class="stat"><div class="stat-num" id="total-records">-</div><div class="stat-label">打卡总数</div></div>
+        <div class="stat"><div class="stat-num" id="today-records">-</div><div class="stat-label">今日打卡</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>📝 打卡记录</h3>
+      <div class="search"><input type="text" placeholder="搜索姓名或部门..." oninput="filterRecords()"></div>
+      <div id="records-list"><div style="text-align:center;padding:30px;color:#999">加载中...</div></div>
+    </div>
+    <div class="card">
+      <h3>📥 数据导出</h3>
+      <p style="font-size:13px;color:#666;margin-bottom:12px">导出所有打卡记录为CSV格式</p>
+      <button class="btn" onclick="downloadCSV()">📥 导出全部数据</button>
+    </div>
+  </div>
+  <script>
+    const SPACE_ID = "mp-b2be9018-6e45-4c71-9e09-c26926791d3a";
+    let app, db, allRecords = [];
+    function init() { app = cloudbase.init({ env: SPACE_ID }); db = app.database(); loadData(); }
+    async function loadData() {
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        const [todayR, totalR, allR] = await Promise.all([
+          db.collection('punch_records').where({ date: today }).get(),
+          db.collection('punch_records').count(),
+          db.collection('punch_records').get()
+        ]);
+        const users = [...new Set(allR.data.map(r => r.userName))];
+        document.getElementById('total-members').textContent = users.length;
+        document.getElementById('total-records').textContent = totalR.total || 0;
+        document.getElementById('today-records').textContent = todayR.data.length || 0;
+        allRecords = allR.data;
+        renderRecords(allR.data);
+      } catch (e) { document.getElementById('records-list').innerHTML = '<div style="text-align:center;padding:30px;color:#999">加载失败</div>'; }
+    }
+    function renderRecords(records) {
+      if (records.length === 0) { document.getElementById('records-list').innerHTML = '<div style="text-align:center;padding:30px;color:#999">暂无记录</div>'; return; }
+      document.getElementById('records-list').innerHTML = '<table><thead><tr><th>姓名</th><th>部门</th><th>日期</th><th>录音</th><th>心得</th></tr></thead><tbody>' +
+        records.map(r => '<tr><td>' + r.userName + '</td><td>' + (r.department || '-') + '</td><td>' + r.date + '</td><td>' + (r.audioUrl ? '<a href="' + r.audioUrl + '" target="_blank">🎙️</a>' : '-') + '</td><td>' + (r.content ? r.content.substring(0, 30) : '-') + '</td></tr>').join('') + '</tbody></table>';
+    }
+    function filterRecords() {
+      const kw = event.target.value.toLowerCase();
+      renderRecords(allRecords.filter(r => r.userName.toLowerCase().includes(kw) || (r.department && r.department.toLowerCase().includes(kw))));
+    }
+    async function downloadCSV() {
+      let csv = '日期,姓名,部门,时间,录音,心得\n';
+      allRecords.forEach(r => { csv += '"' + r.date + '","' + r.userName + '","' + (r.department || '') + '","' + (r.createTime ? new Date(r.createTime).toLocaleString('zh-CN') : '') + '","' + (r.audioUrl || '') + '","' + (r.content || '').replace(/"/g, '""') + '"\n'; });
+      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = '后台数据_' + new Date().toISOString().split('T')[0] + '.csv';
+      a.click();
+      alert('导出成功！');
+    }
+    window.onload = init;
+  </script>
+</body>
+</html>
