@@ -283,7 +283,156 @@ function openDetail(id){const r=Storage.getReminders().find(x=>x.id===id);if(!r)
 function editFromDetail(id){const modal=document.getElementById('reminder-modal');const content=modal.querySelector('.modal-content');content.innerHTML=`<div class="modal-header"><h3 id="modal-title">编辑提醒</h3><button class="close-btn" onclick="closeModal()"><i class="fas fa-times"></i></button></div><form id="reminder-form"><input type="hidden" id="reminder-id"><div class="form-group"><label>提醒标题</label><input type="text" id="reminder-title" placeholder="请输入提醒标题" required></div><div class="form-group"><label>提醒日期</label><input type="date" id="reminder-date" required></div><div class="form-group"><label>提醒时间</label><input type="time" id="reminder-time" required></div><div class="form-group"><label>描述（可选）</label><textarea id="reminder-desc" placeholder="添加描述..."></textarea></div><div class="form-group"><label>提醒方式</label><div class="radio-group"><label class="radio-item"><input type="radio" name="alert-type" value="ring" checked><span><i class="fas fa-bell"></i> 响铃</span></label><label class="radio-item"><input type="radio" name="alert-type" value="vibrate"><span><i class="fas fa-mobile-alt"></i> 震动</span></label><label class="radio-item"><input type="radio" name="alert-type" value="silent"><span><i class="fas fa-volume-mute"></i> 静音</span></label></div></div><button type="submit" class="btn-primary">保存提醒</button></form>`;bindFormSubmit();openModal(id)}
 function deleteReminder(id){if(confirm('确定删除此提醒？')){const data=Storage.getReminders().filter(r=>r.id!==id);Storage.saveReminders(data);closeModal();showToast('🗑️ 已删除提醒');render()}}
 function bindFormSubmit(){document.getElementById('reminder-form')?.addEventListener('submit',e=>{e.preventDefault();const id=document.getElementById('reminder-id').value;const title=document.getElementById('reminder-title').value.trim();const date=document.getElementById('reminder-date').value;const time=document.getElementById('reminder-time').value;const desc=document.getElementById('reminder-desc').value.trim();const alertType=document.querySelector('input[name="alert-type"]:checked')?.value||'ring';if(!title||!date||!time){showToast('⚠️ 请填写完整信息');return}const reminders=Storage.getReminders();if(id){const idx=reminders.findIndex(r=>r.id===id);if(idx>-1)reminders[idx]={...reminders[idx],title,date,time,desc,alertType}}else{reminders.push({id:genId(),title,date,time,desc,alertType,synced:false,createdAt:new Date().toISOString()})}Storage.saveReminders(reminders);closeModal();showToast(id?'✅ 提醒已更新':'✅ 提醒已保存');render()})}
-document.addEventListener('DOMContentLoaded',()=>{initDate();document.querySelectorAll('.nav-item').forEach(el=>{el.addEventListener('click',e=>{e.preventDefault();navigate(el.dataset.page)})});document.getElementById('reminder-modal').addEventListener('click',e=>{if(e.target===document.getElementById('reminder-modal'))closeModal()});bindFormSubmit();render();if(Storage.getReminders().length===0){const sample=[{id:genId(),title:'开公司财务会议',date:today(),time:'14:30',desc:'重点关注每月的损益表',alertType:'ring',synced:true,createdAt:new Date().toISOString()},{id:genId(),title:'供应商对账',date:today(),time:'10:00',desc:'月底对账，核对应付款',alertType:'ring',synced:false,createdAt:new Date().toISOString()}];Storage.saveReminders(sample);render()}});
+// 通知功能
+const NotificationManager = {
+    permission: false,
+    checkInterval: null,
+    notifiedIds: new Set(),
+    
+    init() {
+        // 加载已通知的记录
+        const saved = localStorage.getItem('tm_notified_ids');
+        if (saved) {
+            this.notifiedIds = new Set(JSON.parse(saved));
+        }
+        this.requestPermission();
+        this.startChecking();
+    },
+    
+    requestPermission() {
+        if ('Notification' in window) {
+            Notification.requestPermission().then(permission => {
+                this.permission = permission === 'granted';
+                if (this.permission) {
+                    console.log('✅ 通知权限已获取');
+                }
+            });
+        }
+    },
+    
+    startChecking() {
+        // 每分钟检查一次
+        this.checkInterval = setInterval(() => this.checkReminders(), 60000);
+        // 立即检查一次
+        this.checkReminders();
+    },
+    
+    checkReminders() {
+        if (!this.permission) return;
+        
+        const reminders = Storage.getReminders();
+        const now = new Date();
+        const currentDate = now.toISOString().slice(0, 10);
+        const currentTime = `${padZ(now.getHours())}:${padZ(now.getMinutes())}`;
+        
+        reminders.forEach(r => {
+            // 检查是否是当前时间（前后1分钟内）
+            if (r.date === currentDate && r.time === currentTime && !this.notifiedIds.has(r.id)) {
+                this.showNotification(r);
+                this.notifiedIds.add(r.id);
+                this.saveNotifiedIds();
+            }
+        });
+        
+        // 清理过期的通知记录（超过7天的）
+        this.cleanupOldNotifiedIds();
+    },
+    
+    showNotification(reminder) {
+        const title = '⏰ Time Mark 提醒';
+        const options = {
+            body: reminder.title,
+            icon: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/svgs/solid/bell.svg',
+            badge: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/svgs/solid/bell.svg',
+            tag: reminder.id,
+            requireInteraction: true,
+            vibrate: reminder.alertType === 'vibrate' ? [200, 100, 200] : undefined,
+            silent: reminder.alertType === 'silent'
+        };
+        
+        const notification = new Notification(title, options);
+        
+        notification.onclick = () => {
+            window.focus();
+            notification.close();
+        };
+        
+        // 播放提示音（如果是响铃模式）
+        if (reminder.alertType === 'ring') {
+            this.playSound();
+        }
+    },
+    
+    playSound() {
+        // 使用简单的蜂鸣声
+        try {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = 800;
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.5);
+            
+            // 响3次
+            setTimeout(() => this.playSingleBeep(audioContext), 600);
+            setTimeout(() => this.playSingleBeep(audioContext), 1200);
+        } catch (e) {
+            console.log('无法播放声音:', e);
+        }
+    },
+    
+    playSingleBeep(audioContext) {
+        try {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = 800;
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.5);
+        } catch (e) {}
+    },
+    
+    saveNotifiedIds() {
+        localStorage.setItem('tm_notified_ids', JSON.stringify([...this.notifiedIds]));
+    },
+    
+    cleanupOldNotifiedIds() {
+        // 7天前的提醒ID可以清理
+        const reminders = Storage.getReminders();
+        const reminderIds = new Set(reminders.map(r => r.id));
+        
+        let changed = false;
+        this.notifiedIds.forEach(id => {
+            if (!reminderIds.has(id)) {
+                this.notifiedIds.delete(id);
+                changed = true;
+            }
+        });
+        
+        if (changed) {
+            this.saveNotifiedIds();
+        }
+    }
+};
+
+document.addEventListener('DOMContentLoaded',()=>{initDate();document.querySelectorAll('.nav-item').forEach(el=>{el.addEventListener('click',e=>{e.preventDefault();navigate(el.dataset.page)})});document.getElementById('reminder-modal').addEventListener('click',e=>{if(e.target===document.getElementById('reminder-modal'))closeModal()});bindFormSubmit();render();NotificationManager.init();if(Storage.getReminders().length===0){const sample=[{id:genId(),title:'开公司财务会议',date:today(),time:'14:30',desc:'重点关注每月的损益表',alertType:'ring',synced:true,createdAt:new Date().toISOString()},{id:genId(),title:'供应商对账',date:today(),time:'10:00',desc:'月底对账，核对应付款',alertType:'ring',synced:false,createdAt:new Date().toISOString()}];Storage.saveReminders(sample);render()}});
     </script>
 </body>
 </html>
