@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Time Mark - 智能时间管理</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+/* ===== 全局重置 ===== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #f5f7fa; color: #333; }
+
+/* ===== APP 容器 ===== */
+#app { max-width: 480px; margin: 0 auto; height: 100vh; display: flex; flex-direction: column; background: #f5f7fa; position: relative; overflow: hidden; }
+#page-container { flex: 1; overflow-y: auto; overflow-x: hidden; padding-bottom: 70px; }
+
+/* ===== 底部导航 ===== */
+.bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: #fff; border-top: 1px solid #eee; display: flex; z-index: 100; box-shadow: 0 -2px 10px rgba(0,0,0,0.06); }
+.nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 8px 0 6px; text-decoration: none; color: #999; font-size: 11px; gap: 3px; transition: color 0.2s; }
+.nav-item i { font-size: 20px; }
+.nav-item.active { color: #2196F3; }
+.nav-item.active span { color: #2196F3; }
+
+/* ===== 页面通用 ===== */
+.page { min-height: 100%; }
+.page-header { padding: 20px 16px 12px; background: #fff; }
+.page-header h1 { font-size: 22px; font-weight: 700; color: #1a1a2e; }
+.page-header p { font-size: 13px; color: #888; margin-top: 3px; }
+
+/* ===== 首页 ===== */
+.calendar-section { background: #fff; padding: 16px; margin-bottom: 12px; }
+.calendar-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.calendar-nav h2 { font-size: 18px; font-weight: 700; color: #1a1a2e; }
+.cal-btn { background: none; border: none; font-size: 18px; color: #2196F3; cursor: pointer; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
+.cal-btn:hover { background: #e3f2fd; }
+
+.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.cal-weekday { text-align: center; font-size: 12px; color: #888; padding: 6px 0; font-weight: 500; }
+.cal-weekday:first-child { color: #f44336; }
+.cal-weekday:last-child { color: #2196F3; }
+
+.cal-day { text-align: center; padding: 6px 2px; border-radius: 8px; cursor: pointer; font-size: 14px; color: #333; position: relative; transition: background 0.15s; min-height: 38px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+.cal-day:hover { background: #e3f2fd; }
+.cal-day.today { background: #2196F3; color: #fff; font-weight: 700; border-radius: 50%; width: 32px; height: 32px; margin: auto; }
+.cal-day.selected { background: #e3f2fd; color: #2196F3; font-weight: 700; }
+.cal-day.today.selected { background: #2196F3; color: #fff; }
+.cal-day.other-month { color: #ccc; }
+.cal-day.sunday { color: #f44336; }
+.cal-day.sunday.today { color: #fff; }
+.cal-day.saturday { color: #2196F3; }
+.cal-day.saturday.today { color: #fff; }
+.cal-dot { width: 5px; height: 5px; background: #FF9800; border-radius: 50%; }
+.cal-day.today .cal-dot { background: #fff; }
+
+.stats-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; padding: 0 16px 12px; }
+.stat-card { background: #fff; border-radius: 12px; padding: 14px 10px; text-align: center; box-shadow: 0 1px 6px rgba(0,0,0,0.06); }
+.stat-card .stat-num { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+.stat-card .stat-label { font-size: 12px; color: #888; }
+.stat-card:nth-child(1) .stat-num { color: #2196F3; }
+.stat-card:nth-child(2) .stat-num { color: #FF9800; }
+.stat-card:nth-child(3) .stat-num { color: #4CAF50; }
+
+.day-reminders { padding: 0 16px; }
+.section-title { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.section-title h3 { font-size: 16px; font-weight: 700; color: #1a1a2e; }
+.section-title a { font-size: 13px; color: #2196F3; text-decoration: none; }
+
+.add-btn-bar { margin: 0 16px 16px; background: linear-gradient(135deg, #2196F3, #1976D2); border-radius: 14px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; color: #fff; box-shadow: 0 4px 12px rgba(33,150,243,0.3); transition: transform 0.15s; }
+.add-btn-bar:hover { transform: translateY(-1px); }
+.add-btn-bar .left { display: flex; align-items: center; gap: 10px; }
+.add-btn-bar .left i { font-size: 20px; background: rgba(255,255,255,0.2); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.add-btn-bar .text h4 { font-size: 15px; font-weight: 600; }
+.add-btn-bar .text p { font-size: 12px; opacity: 0.85; margin-top: 2px; }
+.add-btn-bar .arrow { font-size: 18px; opacity: 0.8; }
+
+.reminder-card { background: #fff; border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; box-shadow: 0 1px 8px rgba(0,0,0,0.07); display: flex; align-items: flex-start; gap: 12px; position: relative; }
+.reminder-icon { width: 42px; height: 42px; border-radius: 12px; background: #2196F3; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; flex-shrink: 0; }
+.reminder-body { flex: 1; min-width: 0; }
+.reminder-title { font-size: 15px; font-weight: 600; color: #1a1a2e; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.reminder-desc { font-size: 12px; color: #888; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.reminder-meta { display: flex; align-items: center; gap: 12px; font-size: 12px; color: #555; }
+.reminder-meta .date { display: flex; align-items: center; gap: 4px; }
+.reminder-meta .date i { color: #2196F3; }
+.reminder-meta .time { display: flex; align-items: center; gap: 4px; }
+.reminder-meta .time i { color: #888; }
+.reminder-badge { position: absolute; top: 12px; right: 12px; font-size: 11px; color: #2196F3; background: #e3f2fd; padding: 2px 8px; border-radius: 20px; cursor: pointer; }
+.reminder-badge.ring { color: #FF9800; background: #fff8e1; }
+.reminder-status { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; border-top: 1px solid #f5f5f5; padding-top: 8px; }
+.status-tag { font-size: 11px; color: #4CAF50; display: flex; align-items: center; gap: 4px; }
+.status-tag i { font-size: 12px; }
+.detail-btn { font-size: 12px; color: #2196F3; text-decoration: none; background: none; border: none; cursor: pointer; display: flex; align-items: center; gap: 3px; }
+
+.reminders-header { padding: 20px 16px 10px; background: #fff; }
+.reminders-header h1 { font-size: 22px; font-weight: 700; color: #1a1a2e; margin-bottom: 12px; }
+.stats-mini { display: flex; gap: 10px; }
+.stats-mini .mini-stat { background: #f5f7fa; border-radius: 12px; padding: 10px 16px; text-align: center; flex: 1; }
+.mini-stat .num { font-size: 20px; font-weight: 700; }
+.mini-stat .lbl { font-size: 11px; color: #888; }
+.mini-stat:nth-child(1) .num { color: #2196F3; }
+.mini-stat:nth-child(2) .num { color: #FF9800; }
+.mini-stat:nth-child(3) .num { color: #4CAF50; }
+
+.filter-bar { padding: 12px 16px; background: #fff; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 10px; }
+.filter-bar input { flex: 1; border: 1px solid #e0e0e0; border-radius: 8px; padding: 8px 12px; font-size: 14px; outline: none; background: #f9f9f9; }
+.filter-bar input:focus { border-color: #2196F3; background: #fff; }
+
+.list-meta { padding: 10px 16px 6px; font-size: 13px; color: #888; }
+
+.empty-state { text-align: center; padding: 60px 20px; color: #bbb; }
+.empty-state i { font-size: 48px; margin-bottom: 12px; display: block; }
+.empty-state p { font-size: 14px; }
+
+.sync-page { padding-bottom: 20px; }
+.sync-overview { margin: 16px; background: #fff; border-radius: 16px; padding: 20px; box-shadow: 0 1px 8px rgba(0,0,0,0.07); }
+.sync-overview-title { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.sync-overview-title h3 { font-size: 16px; font-weight: 700; }
+.online-dot { display: flex; align-items: center; gap: 5px; font-size: 13px; color: #4CAF50; }
+.online-dot::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #4CAF50; }
+.sync-nums { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.sync-num-item { text-align: center; }
+.sync-num-item .num { font-size: 24px; font-weight: 700; }
+.sync-num-item .lbl { font-size: 12px; color: #888; margin-top: 2px; }
+.sync-num-item:nth-child(1) .num { color: #2196F3; }
+.sync-num-item:nth-child(2) .num { color: #4CAF50; }
+.sync-num-item:nth-child(3) .num { color: #FF9800; }
+
+.sync-section { margin: 0 16px 16px; }
+.sync-section-title { font-size: 13px; color: #888; margin-bottom: 8px; padding-left: 4px; }
+.sync-item { background: #fff; border-radius: 14px; padding: 16px; margin-bottom: 10px; display: flex; align-items: center; gap: 14px; cursor: pointer; box-shadow: 0 1px 6px rgba(0,0,0,0.06); transition: transform 0.15s; }
+.sync-item:hover { transform: translateY(-1px); }
+.sync-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 20px; flex-shrink: 0; }
+.sync-icon.blue { background: #2196F3; }
+.sync-icon.purple { background: #9C27B0; }
+.sync-icon.orange { background: #FF9800; }
+.sync-icon.green { background: #4CAF50; }
+.sync-icon.teal { background: #009688; }
+.sync-body { flex: 1; }
+.sync-body h4 { font-size: 15px; font-weight: 600; color: #1a1a2e; }
+.sync-body p { font-size: 12px; color: #888; margin-top: 2px; }
+.sync-item .arrow { color: #bbb; }
+
+.btn-sync-main { margin: 0 16px; background: linear-gradient(135deg, #2196F3, #1976D2); color: #fff; border: none; width: calc(100% - 32px); padding: 16px; border-radius: 14px; font-size: 16px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(33,150,243,0.3); transition: transform 0.15s; }
+.btn-sync-main:hover { transform: translateY(-1px); }
+
+.profile-page { padding-bottom: 20px; }
+.profile-banner { position: relative; height: 180px; overflow: hidden; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+.banner-bg { width: 100%; height: 100%; object-fit: cover; }
+.profile-info { position: absolute; bottom: 20px; left: 16px; display: flex; align-items: flex-end; gap: 14px; }
+.avatar { width: 70px; height: 70px; border-radius: 18px; background: linear-gradient(135deg, #667eea, #764ba2); border: 3px solid rgba(255,255,255,0.8); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 30px; }
+.profile-text h2 { font-size: 18px; font-weight: 700; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,0.3); }
+.profile-text p { font-size: 13px; color: rgba(255,255,255,0.85); margin-top: 2px; }
+
+.profile-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px; }
+.profile-stat { background: #fff; border-radius: 14px; padding: 16px; display: flex; align-items: center; gap: 12px; box-shadow: 0 1px 8px rgba(0,0,0,0.07); }
+.profile-stat-icon { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; }
+.profile-stat-icon.blue { background: #2196F3; }
+.profile-stat-icon.pink { background: #E91E63; }
+.profile-stat-body h4 { font-size: 18px; font-weight: 700; color: #1a1a2e; }
+.profile-stat-body p { font-size: 11px; color: #888; }
+
+.profile-section { margin: 0 16px 14px; }
+.profile-section-title { font-size: 14px; font-weight: 700; color: #1a1a2e; margin-bottom: 8px; padding-left: 4px; border-left: 3px solid #2196F3; padding-left: 8px; }
+.profile-item { background: #fff; border-radius: 0; padding: 14px 16px; display: flex; align-items: center; gap: 14px; cursor: pointer; border-bottom: 1px solid #f5f5f5; }
+.profile-item:first-child { border-radius: 14px 14px 0 0; }
+.profile-item:last-child { border-radius: 0 0 14px 14px; border-bottom: none; }
+.profile-item:only-child { border-radius: 14px; }
+.item-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 16px; flex-shrink: 0; }
+.item-icon.cyan { background: #00BCD4; }
+.item-icon.yellow { background: #FFC107; }
+.item-icon.green { background: #4CAF50; }
+.item-icon.purple { background: #9C27B0; }
+.profile-item-body { flex: 1; }
+.profile-item-body h4 { font-size: 14px; font-weight: 500; color: #1a1a2e; }
+.profile-item-body p { font-size: 12px; color: #888; margin-top: 1px; }
+.profile-item .right { display: flex; align-items: center; gap: 6px; }
+.profile-item .badge { font-size: 12px; color: #fff; background: #4CAF50; padding: 2px 8px; border-radius: 20px; }
+.profile-item .arrow { color: #bbb; }
+
+.logout-btn { margin: 16px; border: none; background: #fff; color: #f44336; font-size: 15px; font-weight: 600; padding: 16px; border-radius: 14px; width: calc(100% - 32px); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 1px 6px rgba(0,0,0,0.06); }
+
+.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.45); z-index: 999; align-items: flex-end; justify-content: center; }
+.modal.show { display: flex; animation: fadeIn 0.2s; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.modal-content { background: #fff; border-radius: 24px 24px 0 0; padding: 24px 20px 40px; width: 100%; max-width: 480px; animation: slideUp 0.3s cubic-bezier(0.34,1.56,0.64,1); max-height: 90vh; overflow-y: auto; }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+.modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.modal-header h3 { font-size: 18px; font-weight: 700; color: #1a1a2e; }
+.close-btn { background: #f5f5f5; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #666; font-size: 14px; }
+
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; font-size: 13px; color: #666; margin-bottom: 6px; font-weight: 500; }
+.form-group input, .form-group textarea { width: 100%; border: 1px solid #e0e0e0; border-radius: 10px; padding: 10px 14px; font-size: 15px; outline: none; background: #fafafa; transition: border-color 0.2s; color: #333; }
+.form-group input:focus, .form-group textarea:focus { border-color: #2196F3; background: #fff; }
+.form-group textarea { height: 80px; resize: none; }
+
+.radio-group { display: flex; gap: 10px; }
+.radio-item { flex: 1; cursor: pointer; }
+.radio-item input { display: none; }
+.radio-item span { display: flex; align-items: center; justify-content: center; gap: 5px; padding: 9px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 13px; color: #666; transition: all 0.2s; }
+.radio-item input:checked + span { border-color: #2196F3; background: #e3f2fd; color: #2196F3; font-weight: 600; }
+
+.btn-primary { width: 100%; background: linear-gradient(135deg, #2196F3, #1976D2); color: #fff; border: none; padding: 15px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 8px; box-shadow: 0 4px 12px rgba(33,150,243,0.3); transition: transform 0.15s; }
+.btn-primary:hover { transform: translateY(-1px); }
+
+.detail-title { font-size: 20px; font-weight: 700; color: #1a1a2e; margin-bottom: 16px; }
+.detail-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f5f5f5; font-size: 14px; color: #555; }
+.detail-row i { width: 20px; color: #2196F3; }
+.detail-actions { display: flex; gap: 10px; margin-top: 20px; }
+.btn-edit { flex: 1; background: #e3f2fd; color: #2196F3; border: none; padding: 13px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; }
+.btn-delete { flex: 1; background: #ffebee; color: #f44336; border: none; padding: 13px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; }
+
+.toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.75); color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 13px; z-index: 9999; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; }
+.toast.show { opacity: 1; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div id="page-container"></div>
+        <nav class="bottom-nav" id="bottom-nav">
+            <a href="#" class="nav-item active" data-page="home"><i class="fas fa-calendar-check"></i><span>首页</span></a>
+            <a href="#" class="nav-item" data-page="reminders"><i class="fas fa-bell"></i><span>提醒</span></a>
+            <a href="#" class="nav-item" data-page="sync"><i class="fas fa-sync-alt"></i><span>同步</span></a>
+            <a href="#" class="nav-item" data-page="profile"><i class="fas fa-user"></i><span>我的</span></a>
+        </nav>
+    </div>
+
+    <div class="modal" id="reminder-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">新增提醒</h3>
+                <button class="close-btn" onclick="closeModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="reminder-form">
+                <input type="hidden" id="reminder-id">
+                <div class="form-group"><label>提醒标题</label><input type="text" id="reminder-title" placeholder="请输入提醒标题" required></div>
+                <div class="form-group"><label>提醒日期</label><input type="date" id="reminder-date" required></div>
+                <div class="form-group"><label>提醒时间</label><input type="time" id="reminder-time" required></div>
+                <div class="form-group"><label>描述（可选）</label><textarea id="reminder-desc" placeholder="添加描述..."></textarea></div>
+                <div class="form-group"><label>提醒方式</label>
+                    <div class="radio-group">
+                        <label class="radio-item"><input type="radio" name="alert-type" value="ring" checked><span><i class="fas fa-bell"></i> 响铃</span></label>
+                        <label class="radio-item"><input type="radio" name="alert-type" value="vibrate"><span><i class="fas fa-mobile-alt"></i> 震动</span></label>
+                        <label class="radio-item"><input type="radio" name="alert-type" value="silent"><span><i class="fas fa-volume-mute"></i> 静音</span></label>
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary">保存提醒</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+const Storage={getReminders(){try{return JSON.parse(localStorage.getItem('tm_reminders')||'[]')}catch{return[]}},saveReminders(list){localStorage.setItem('tm_reminders',JSON.stringify(list))},getUser(){let u=JSON.parse(localStorage.getItem('tm_user')||'null');if(!u){u={name:'时光用户',phone:'',regDate:new Date().toISOString().slice(0,10),days:1};localStorage.setItem('tm_user',JSON.stringify(u))}u.days=Math.max(1,Math.ceil((Date.now()-new Date(u.regDate).getTime())/86400000));return u}};
+function genId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+function today(){return new Date().toISOString().slice(0,10)}
+function padZ(n){return String(n).padStart(2,'0')}
+function showToast(msg){let el=document.getElementById('toast');if(!el){el=document.createElement('div');el.id='toast';el.className='toast';document.body.appendChild(el)}el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2000)}
+let currentPage='home',currentYear,currentMonth,selectedDate=today();
+function initDate(){const d=new Date();currentYear=d.getFullYear();currentMonth=d.getMonth()}
+function navigate(page){currentPage=page;document.querySelectorAll('.nav-item').forEach(el=>{el.classList.toggle('active',el.dataset.page===page)});render()}
+function render(){const container=document.getElementById('page-container');switch(currentPage){case'home':container.innerHTML=renderHome();bindHome();break;case'reminders':container.innerHTML=renderReminders();bindReminders();break;case'sync':container.innerHTML=renderSync();bindSync();break;case'profile':container.innerHTML=renderProfile();bindProfile();break}}
+function renderHome(){const reminders=Storage.getReminders();const todayStr=today();const todayReminders=reminders.filter(r=>r.date===selectedDate).sort((a,b)=>a.time.localeCompare(b.time));const syncedCount=reminders.filter(r=>r.synced).length;const days=new Set(reminders.map(r=>r.date)).size;return`<div class="page home-page"><div class="calendar-section"><div class="calendar-nav"><button class="cal-btn" id="prev-month"><i class="fas fa-chevron-left"></i></button><h2>${currentYear}年${currentMonth+1}月</h2><button class="cal-btn" id="next-month"><i class="fas fa-chevron-right"></i></button></div>${renderCalendar(reminders)}</div><div class="stats-row"><div class="stat-card"><div class="stat-num">${reminders.length}</div><div class="stat-label">总提醒</div></div><div class="stat-card"><div class="stat-num">${syncedCount}</div><div class="stat-label">已同步</div></div><div class="stat-card"><div class="stat-num">${days}</div><div class="stat-label">提醒天数</div></div></div><div class="add-btn-bar" id="add-btn-bar"><div class="left"><i class="fas fa-plus"></i><div class="text"><h4>新增提醒</h4><p>记录每一个重要时刻</p></div></div><i class="fas fa-arrow-right arrow"></i></div><div class="day-reminders"><div class="section-title"><h3>${selectedDate===todayStr?'今日提醒':selectedDate+' 提醒'}</h3><a href="#" id="view-all-link">查看全部 ›</a></div>${todayReminders.length>0?todayReminders.map(r=>renderCard(r)).join(''):'<div class="empty-state"><i class="far fa-bell-slash"></i><p>暂无提醒事项</p></div>'}</div></div>`}
+function renderCalendar(reminders){const year=currentYear,month=currentMonth;const todayStr=today();const reminderDates=new Set(reminders.map(r=>r.date));const firstDay=new Date(year,month,1).getDay();const daysInMonth=new Date(year,month+1,0).getDate();const daysInPrev=new Date(year,month,0).getDate();let html='<div class="calendar-grid">';const weekdays=['日','一','二','三','四','五','六'];weekdays.forEach(w=>{html+=`<div class="cal-weekday">${w}</div>`});for(let i=firstDay-1;i>=0;i--){html+=`<div class="cal-day other-month">${daysInPrev-i}</div>`}for(let d=1;d<=daysInMonth;d++){const dateStr=`${year}-${padZ(month+1)}-${padZ(d)}`;const dow=new Date(year,month,d).getDay();let cls='cal-day';if(dateStr===todayStr)cls+=' today';if(dateStr===selectedDate)cls+=' selected';if(dow===0)cls+=' sunday';if(dow===6)cls+=' saturday';const dot=reminderDates.has(dateStr)?'<div class="cal-dot"></div>':'';html+=`<div class="${cls}" data-date="${dateStr}">${d}${dot}</div>`}const total=firstDay+daysInMonth;const remain=total%7===0?0:7-(total%7);for(let i=1;i<=remain;i++){html+=`<div class="cal-day other-month">${i}</div>`}html+='</div>';return html}
+function renderCard(r){const alertIcon=r.alertType==='ring'?'fa-bell':r.alertType==='vibrate'?'fa-mobile-alt':'fa-volume-mute';const alertLabel=r.alertType==='ring'?'响铃':r.alertType==='vibrate'?'震动':'静音';return`<div class="reminder-card" data-id="${r.id}"><div class="reminder-icon"><i class="fas fa-${alertIcon}"></i></div><div class="reminder-body"><div class="reminder-title">${r.title}</div><div class="reminder-desc">${r.desc||'暂无描述'}</div><div class="reminder-meta"><span class="date"><i class="far fa-calendar"></i>${r.date}</span><span class="time"><i class="far fa-clock"></i>${r.time}</span></div><div class="reminder-status"><span class="status-tag"><i class="fas fa-check-circle"></i>${r.synced?'已同步':'未同步'}</span><button class="detail-btn" data-id="${r.id}">详情 <i class="fas fa-arrow-right"></i></button></div></div><span class="reminder-badge ring">${alertLabel}</span></div>`}
+function bindHome(){document.getElementById('prev-month')?.addEventListener('click',()=>{currentMonth--;if(currentMonth<0){currentMonth=11;currentYear--}render()});document.getElementById('next-month')?.addEventListener('click',()=>{currentMonth++;if(currentMonth>11){currentMonth=0;currentYear++}render()});document.querySelectorAll('.cal-day[data-date]').forEach(el=>{el.addEventListener('click',()=>{selectedDate=el.dataset.date;render()})});document.getElementById('add-btn-bar')?.addEventListener('click',()=>openModal());document.getElementById('view-all-link')?.addEventListener('click',e=>{e.preventDefault();navigate('reminders')});document.querySelectorAll('.detail-btn[data-id]').forEach(btn=>{btn.addEventListener('click',()=>openDetail(btn.dataset.id))})}
+let filterDate='';
+function renderReminders(){const reminders=Storage.getReminders();const todayStr=today();const todayCount=reminders.filter(r=>r.date===todayStr).length;const syncedCount=reminders.filter(r=>r.synced).length;const filtered=filterDate?reminders.filter(r=>r.date===filterDate):reminders;const sorted=[...filtered].sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));return`<div class="page reminders-page"><div class="reminders-header"><h1>提醒事项</h1><div class="stats-mini"><div class="mini-stat"><div class="num">${reminders.length}</div><div class="lbl">总提醒</div></div><div class="mini-stat"><div class="num">${todayCount}</div><div class="lbl">今日</div></div><div class="mini-stat"><div class="num">${syncedCount}</div><div class="lbl">已同步</div></div></div></div><div class="filter-bar"><i class="fas fa-search" style="color:#bbb"></i><input type="date" id="filter-date" value="${filterDate}" placeholder="按日期筛选"></div><div class="add-btn-bar" style="margin:12px 16px 0;" id="add-btn-bar2"><div class="left"><i class="fas fa-plus"></i><div class="text"><h4>新增提醒</h4><p>记录每一个重要时刻</p></div></div><i class="fas fa-arrow-right arrow"></i></div><div class="list-meta">提醒列表&nbsp;&nbsp;共 ${sorted.length} 条</div><div style="padding:0 16px 16px">${sorted.length>0?sorted.map(r=>renderCard(r)).join(''):'<div class="empty-state"><i class="far fa-bell-slash"></i><p>暂无提醒事项</p></div>'}</div></div>`}
+function bindReminders(){document.getElementById('filter-date')?.addEventListener('change',e=>{filterDate=e.target.value;render()});document.getElementById('add-btn-bar2')?.addEventListener('click',()=>openModal());document.querySelectorAll('.detail-btn[data-id]').forEach(btn=>{btn.addEventListener('click',()=>openDetail(btn.dataset.id))})}
+function renderSync(){const reminders=Storage.getReminders();const syncedCount=reminders.filter(r=>r.synced).length;const pendingCount=reminders.length-syncedCount;return`<div class="page sync-page"><div class="page-header"><div style="display:flex;align-items:center;gap:12px;margin-bottom:4px"><div style="width:44px;height:44px;border-radius:12px;background:#2196F3;display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px"><i class="fas fa-sync-alt"></i></div><div><h1 style="font-size:20px">数据同步</h1><p style="font-size:12px;color:#888;margin-top:2px">管理您的提醒数据同步</p></div></div></div><div class="sync-overview"><div class="sync-overview-title"><h3>同步概览</h3><span class="online-dot">在线</span></div><div class="sync-nums"><div class="sync-num-item"><div class="num">${reminders.length}</div><div class="lbl">总提醒数</div></div><div class="sync-num-item"><div class="num">${syncedCount}</div><div class="lbl">已同步</div></div><div class="sync-num-item"><div class="num" style="color:#FF9800">${pendingCount}</div><div class="lbl">待同步</div></div></div></div><div class="sync-section"><div class="sync-section-title">同步操作</div><div class="sync-item" id="sync-export-json"><div class="sync-icon blue"><i class="fas fa-calendar-alt"></i></div><div class="sync-body"><h4>导出到 JSON</h4><p>将提醒数据导出为 JSON 文件</p></div><i class="fas fa-chevron-right arrow"></i></div><div class="sync-item" id="sync-export-csv"><div class="sync-icon purple"><i class="fas fa-file-csv"></i></div><div class="sync-body"><h4>导出到 Excel/CSV</h4><p>批量导入导出同步记录</p></div><i class="fas fa-chevron-right arrow"></i></div><div class="sync-item" id="sync-import"><div class="sync-icon orange"><i class="fas fa-file-import"></i></div><div class="sync-body"><h4>导入数据</h4><p>从 JSON 文件导入提醒到应用</p></div><i class="fas fa-chevron-right arrow"></i></div><div class="sync-item" id="sync-mark-all"><div class="sync-icon green"><i class="fas fa-check-double"></i></div><div class="sync-body"><h4>全部标记为已同步</h4><p>将所有提醒标记为已同步状态</p></div><i class="fas fa-chevron-right arrow"></i></div></div><div class="sync-section"><div class="sync-section-title">数据管理</div><div class="sync-item" id="sync-clear"><div class="sync-icon" style="background:#f44336"><i class="fas fa-trash-alt"></i></div><div class="sync-body"><h4>清空所有数据</h4><p>删除本地所有提醒记录</p></div><i class="fas fa-chevron-right arrow"></i></div></div><input type="file" id="import-file" accept=".json" style="display:none"><button class="btn-sync-main" id="sync-main-btn">同步记录</button></div>`}
+function bindSync(){document.getElementById('sync-export-json')?.addEventListener('click',exportJSON);document.getElementById('sync-export-csv')?.addEventListener('click',exportCSV);document.getElementById('sync-import')?.addEventListener('click',()=>document.getElementById('import-file')?.click());document.getElementById('import-file')?.addEventListener('change',importJSON);document.getElementById('sync-mark-all')?.addEventListener('click',markAllSynced);document.getElementById('sync-clear')?.addEventListener('click',clearAll);document.getElementById('sync-main-btn')?.addEventListener('click',syncAll)}
+function exportJSON(){const data=Storage.getReminders();const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`timemark_${today()}.json`;a.click();URL.revokeObjectURL(url);showToast('✅ 已导出 JSON 文件')}
+function exportCSV(){const data=Storage.getReminders();const header='标题,日期,时间,描述,提醒方式,已同步';const rows=data.map(r=>`"${r.title}","${r.date}","${r.time}","${r.desc||''}","${r.alertType}","${r.synced?'是':'否'}"`);const csv='\uFEFF'+[header,...rows].join('\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`timemark_${today()}.csv`;a.click();URL.revokeObjectURL(url);showToast('✅ 已导出 CSV 文件')}
+function importJSON(e){const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=(evt)=>{try{const data=JSON.parse(evt.target.result);if(!Array.isArray(data)){showToast('❌ 文件格式不正确');return}const existing=Storage.getReminders();const existIds=new Set(existing.map(r=>r.id));const newOnes=data.filter(r=>!existIds.has(r.id));Storage.saveReminders([...existing,...newOnes]);showToast(`✅ 已导入 ${newOnes.length} 条提醒`);render()}catch{showToast('❌ 解析失败，请检查文件')}};reader.readAsText(file);e.target.value=''}
+function markAllSynced(){const data=Storage.getReminders().map(r=>({...r,synced:true}));Storage.saveReminders(data);showToast('✅ 全部标记为已同步');render()}
+function clearAll(){if(confirm('确定要清空所有提醒数据吗？此操作不可恢复！')){Storage.saveReminders([]);showToast('🗑️ 已清空所有数据');render()}}
+function syncAll(){const data=Storage.getReminders().map(r=>({...r,synced:true}));Storage.saveReminders(data);showToast('✅ 同步完成');render()}
+function renderProfile(){const user=Storage.getUser();const reminders=Storage.getReminders();return`<div class="page profile-page"><div class="profile-banner"><div style="width:100%;height:100%;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);opacity:0.9;position:absolute;top:0;left:0"></div><div class="profile-info" style="position:absolute;bottom:20px;left:16px;display:flex;align-items:flex-end;gap:14px"><div class="avatar"><i class="fas fa-user"></i></div><div class="profile-text"><h2>${user.name}</h2><p><i class="fas fa-phone" style="font-size:11px"></i>&nbsp;${user.phone||'未绑定手机'}</p></div></div></div><div class="profile-stats"><div class="profile-stat"><div class="profile-stat-icon blue"><i class="fas fa-calendar-plus"></i></div><div class="profile-stat-body"><h4>${user.regDate}</h4><p>注册时间</p></div></div><div class="profile-stat"><div class="profile-stat-icon pink"><i class="fas fa-heart"></i></div><div class="profile-stat-body"><h4>${user.days} 天</h4><p>使用天数</p></div></div></div><div class="profile-section"><div class="profile-section-title">账号管理</div><div class="profile-item" id="edit-name"><div class="item-icon cyan"><i class="fas fa-user"></i></div><div class="profile-item-body"><h4>用户名</h4><p>${user.name}</p></div><div class="right"><i class="fas fa-chevron-right arrow"></i></div></div><div class="profile-item" id="edit-phone"><div class="item-icon green"><i class="fas fa-phone"></i></div><div class="profile-item-body"><h4>手机号</h4><p>${user.phone||'未绑定'}</p></div><div class="right">${user.phone?'<span class="badge">已绑定</span>':''}<i class="fas fa-chevron-right arrow"></i></div></div></div><div class="profile-section"><div class="profile-section-title">数据统计</div><div class="profile-item"><div class="item-icon" style="background:#FF9800"><i class="fas fa-bell"></i></div><div class="profile-item-body"><h4>总提醒数</h4><p>累计创建的提醒事项</p></div><div class="right"><strong style="color:#2196F3">${reminders.length}</strong>&nbsp;<i class="fas fa-chevron-right arrow"></i></div></div><div class="profile-item"><div class="item-icon" style="background:#4CAF50"><i class="fas fa-check-circle"></i></div><div class="profile-item-body"><h4>已同步数</h4><p>成功同步的提醒数量</p></div><div class="right"><strong style="color:#4CAF50">${reminders.filter(r=>r.synced).length}</strong>&nbsp;<i class="fas fa-chevron-right arrow"></i></div></div></div><div class="profile-section"><div class="profile-section-title">其他</div><div class="profile-item"><div class="item-icon purple"><i class="fas fa-info-circle"></i></div><div class="profile-item-body"><h4>关于 Time Mark</h4><p>v1.0.0 · 让每一刻都有意义</p></div><div class="right"><i class="fas fa-chevron-right arrow"></i></div></div></div><button class="logout-btn" id="logout-btn"><i class="fas fa-sign-out-alt"></i> 退出登录</button></div>`}
+function bindProfile(){document.getElementById('edit-name')?.addEventListener('click',()=>{const user=Storage.getUser();const name=prompt('请输入新用户名',user.name);if(name&&name.trim()){user.name=name.trim();localStorage.setItem('tm_user',JSON.stringify(user));showToast('✅ 用户名已更新');render()}});document.getElementById('edit-phone')?.addEventListener('click',()=>{const user=Storage.getUser();const phone=prompt('请输入手机号',user.phone);if(phone!==null){user.phone=phone.trim();localStorage.setItem('tm_user',JSON.stringify(user));showToast('✅ 手机号已更新');render()}});document.getElementById('logout-btn')?.addEventListener('click',()=>{if(confirm('确定退出登录？')){showToast('👋 已退出登录')}})}
+function openModal(id=null){const modal=document.getElementById('reminder-modal');const form=document.getElementById('reminder-form');form.reset();if(id){const r=Storage.getReminders().find(x=>x.id===id);if(!r)return;document.getElementById('modal-title').textContent='编辑提醒';document.getElementById('reminder-id').value=r.id;document.getElementById('reminder-title').value=r.title;document.getElementById('reminder-date').value=r.date;document.getElementById('reminder-time').value=r.time;document.getElementById('reminder-desc').value=r.desc||'';form.querySelector(`input[name="alert-type"][value="${r.alertType}"]`).checked=true}else{document.getElementById('modal-title').textContent='新增提醒';document.getElementById('reminder-id').value='';document.getElementById('reminder-date').value=selectedDate;document.getElementById('reminder-time').value=''}modal.classList.add('show')}
+function closeModal(){document.getElementById('reminder-modal').classList.remove('show')}
+function openDetail(id){const r=Storage.getReminders().find(x=>x.id===id);if(!r)return;const alertLabel=r.alertType==='ring'?'响铃':r.alertType==='vibrate'?'震动':'静音';const modal=document.getElementById('reminder-modal');const content=modal.querySelector('.modal-content');content.innerHTML=`<div class="modal-header"><h3 class="modal-title">提醒详情</h3><button class="close-btn" onclick="closeModal()"><i class="fas fa-times"></i></button></div><div class="detail-title">${r.title}</div><div class="detail-row"><i class="far fa-calendar"></i>${r.date}</div><div class="detail-row"><i class="far fa-clock"></i>${r.time}</div><div class="detail-row"><i class="fas fa-align-left"></i>${r.desc||'暂无描述'}</div><div class="detail-row"><i class="fas fa-bell"></i>提醒方式：${alertLabel}</div><div class="detail-row"><i class="fas fa-sync-alt"></i>同步状态：${r.synced?'已同步':'未同步'}</div><div class="detail-actions"><button class="btn-edit" onclick="editFromDetail('${r.id}')"><i class="fas fa-edit"></i> 编辑</button><button class="btn-delete" onclick="deleteReminder('${r.id}')"><i class="fas fa-trash-alt"></i> 删除</button></div>`;modal.classList.add('show')}
+function editFromDetail(id){const modal=document.getElementById('reminder-modal');const content=modal.querySelector('.modal-content');content.innerHTML=`<div class="modal-header"><h3 id="modal-title">编辑提醒</h3><button class="close-btn" onclick="closeModal()"><i class="fas fa-times"></i></button></div><form id="reminder-form"><input type="hidden" id="reminder-id"><div class="form-group"><label>提醒标题</label><input type="text" id="reminder-title" placeholder="请输入提醒标题" required></div><div class="form-group"><label>提醒日期</label><input type="date" id="reminder-date" required></div><div class="form-group"><label>提醒时间</label><input type="time" id="reminder-time" required></div><div class="form-group"><label>描述（可选）</label><textarea id="reminder-desc" placeholder="添加描述..."></textarea></div><div class="form-group"><label>提醒方式</label><div class="radio-group"><label class="radio-item"><input type="radio" name="alert-type" value="ring" checked><span><i class="fas fa-bell"></i> 响铃</span></label><label class="radio-item"><input type="radio" name="alert-type" value="vibrate"><span><i class="fas fa-mobile-alt"></i> 震动</span></label><label class="radio-item"><input type="radio" name="alert-type" value="silent"><span><i class="fas fa-volume-mute"></i> 静音</span></label></div></div><button type="submit" class="btn-primary">保存提醒</button></form>`;bindFormSubmit();openModal(id)}
+function deleteReminder(id){if(confirm('确定删除此提醒？')){const data=Storage.getReminders().filter(r=>r.id!==id);Storage.saveReminders(data);closeModal();showToast('🗑️ 已删除提醒');render()}}
+function bindFormSubmit(){document.getElementById('reminder-form')?.addEventListener('submit',e=>{e.preventDefault();const id=document.getElementById('reminder-id').value;const title=document.getElementById('reminder-title').value.trim();const date=document.getElementById('reminder-date').value;const time=document.getElementById('reminder-time').value;const desc=document.getElementById('reminder-desc').value.trim();const alertType=document.querySelector('input[name="alert-type"]:checked')?.value||'ring';if(!title||!date||!time){showToast('⚠️ 请填写完整信息');return}const reminders=Storage.getReminders();if(id){const idx=reminders.findIndex(r=>r.id===id);if(idx>-1)reminders[idx]={...reminders[idx],title,date,time,desc,alertType}}else{reminders.push({id:genId(),title,date,time,desc,alertType,synced:false,createdAt:new Date().toISOString()})}Storage.saveReminders(reminders);closeModal();showToast(id?'✅ 提醒已更新':'✅ 提醒已保存');render()})}
+document.addEventListener('DOMContentLoaded',()=>{initDate();document.querySelectorAll('.nav-item').forEach(el=>{el.addEventListener('click',e=>{e.preventDefault();navigate(el.dataset.page)})});document.getElementById('reminder-modal').addEventListener('click',e=>{if(e.target===document.getElementById('reminder-modal'))closeModal()});bindFormSubmit();render();if(Storage.getReminders().length===0){const sample=[{id:genId(),title:'开公司财务会议',date:today(),time:'14:30',desc:'重点关注每月的损益表',alertType:'ring',synced:true,createdAt:new Date().toISOString()},{id:genId(),title:'供应商对账',date:today(),time:'10:00',desc:'月底对账，核对应付款',alertType:'ring',synced:false,createdAt:new Date().toISOString()}];Storage.saveReminders(sample);render()}});
+    </script>
+</body>
+</html>
