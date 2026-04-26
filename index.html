@@ -830,9 +830,10 @@ function renderToday() {
     btn.textContent = '✅ 今日已打卡';
     btn.disabled = true;
     statusBox.className = 'status-box completed';
-    let statusText = `✅ 今日已打卡 · ${timeStr}`;
-    if (readTime) statusText += ` · ${readTime}`;
-    statusBox.textContent = statusText;
+
+    // 显示感谢语（方便截图）
+    const userName = localStorage.getItem('daosheng_username') || '';
+    statusBox.innerHTML = `🎉 <b>感谢${userName}完成打卡，再接再厉！</b>`;
 
     // 恢复感悟
     if (reflection) {
@@ -841,7 +842,7 @@ function renderToday() {
     }
     document.getElementById('reflectionInput').disabled = true;
   } else {
-    btn.textContent = '✅ 今日打卡';
+    btn.textContent = '📝 提交打卡';
     btn.disabled = false;
     statusBox.className = 'status-box in-progress';
     statusBox.textContent = '📖 今日内容已解锁，请阅读后打卡';
@@ -870,9 +871,9 @@ function doCheckIn() {
   document.getElementById('checkinBtn').textContent = '✅ 今日已打卡';
   document.getElementById('checkinBtn').disabled = true;
   document.getElementById('statusBox').className = 'status-box completed';
-  let statusText = `✅ 今日已打卡 · ${timeStr}`;
-  if (readTime) statusText += ` · ${readTime}`;
-  document.getElementById('statusBox').textContent = statusText;
+  // 显示感谢语（方便截图发群）
+  const userName = localStorage.getItem('daosheng_username') || '';
+  document.getElementById('statusBox').innerHTML = `🎉 <b>感谢${userName}完成打卡，再接再厉！</b>`;
 
   // 显示感悟已保存
   if (reflection) {
