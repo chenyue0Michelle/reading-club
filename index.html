@@ -308,6 +308,180 @@
     }
     .modal-close:hover { background: rgba(255,255,255,0.13); }
 
+    /* ===== LOGIN OVERLAY ===== */
+    .login-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .login-overlay.active { display: flex; }
+    .login-box {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 20px;
+      padding: 36px 28px;
+      max-width: 360px;
+      width: 100%;
+      text-align: center;
+    }
+    .login-box .login-icon { font-size: 3em; margin-bottom: 12px; }
+    .login-box h2 { color: #f5c518; font-size: 1.2em; margin-bottom: 6px; }
+    .login-box p { color: #888; font-size: 0.85em; margin-bottom: 24px; line-height: 1.6; }
+    .login-input {
+      width: 100%;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 10px;
+      color: #fff;
+      font-size: 1em;
+      padding: 12px 16px;
+      text-align: center;
+      margin-bottom: 16px;
+      font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    }
+    .login-input:focus { outline: none; border-color: #f5c518; }
+    .login-input::placeholder { color: #555; }
+    .login-submit-btn {
+      width: 100%;
+      padding: 13px;
+      background: linear-gradient(135deg, #f5c518, #ff6b6b);
+      color: #000;
+      font-size: 1em;
+      font-weight: bold;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    .login-submit-btn:hover { opacity: 0.9; }
+
+    /* ===== USER GREETING ===== */
+    .user-greeting {
+      display: none;
+      background: rgba(245,197,24,0.08);
+      border: 1px solid rgba(245,197,24,0.2);
+      border-radius: 10px;
+      padding: 10px 16px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.88em;
+    }
+    .user-greeting .greet-text { color: #f5c518; }
+    .user-greeting .change-name {
+      color: #666;
+      font-size: 0.8em;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    .user-greeting .change-name:hover { color: #aaa; }
+
+    /* ===== FONT SIZE CONTROLS ===== */
+    .font-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+      justify-content: flex-end;
+    }
+    .font-btn {
+      padding: 4px 12px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #ccc;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85em;
+      font-weight: bold;
+      transition: all 0.2s;
+    }
+    .font-btn:hover { background: rgba(245,197,24,0.2); border-color: #f5c518; color: #f5c518; }
+    .font-size-label { font-size: 0.78em; color: #666; }
+
+    /* ===== RECORDING ===== */
+    .record-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 12px 16px;
+      margin-bottom: 12px;
+    }
+    .record-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.08);
+      color: #ccc;
+      font-size: 1.3em;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+    .record-btn.recording {
+      border-color: #ff4757;
+      background: rgba(255,71,87,0.15);
+      color: #ff4757;
+      animation: pulse 1s infinite;
+    }
+    @keyframes pulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(255,71,87,0.4); }
+      50% { box-shadow: 0 0 0 8px rgba(255,71,87,0); }
+    }
+    .record-info { flex: 1; }
+    .record-status { font-size: 0.85em; color: #aaa; }
+    .record-status.active { color: #ff4757; }
+    .record-duration { font-size: 0.78em; color: #666; margin-top: 2px; }
+
+    /* ===== REFLECTION ===== */
+    .reflection-area {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    .reflection-label {
+      font-size: 0.82em;
+      color: #888;
+      margin-bottom: 8px;
+    }
+    .reflection-input {
+      width: 100%;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      color: #ddd;
+      font-size: 0.88em;
+      line-height: 1.7;
+      padding: 10px 12px;
+      resize: vertical;
+      min-height: 80px;
+      font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    }
+    .reflection-input:focus {
+      outline: none;
+      border-color: rgba(245,197,24,0.4);
+      background: rgba(255,255,255,0.08);
+    }
+    .reflection-input::placeholder { color: #555; }
+    .reflection-saved {
+      font-size: 0.78em;
+      color: #2ecc71;
+      margin-top: 6px;
+      display: none;
+    }
+
     /* ===== STATS ===== */
     .stats-row {
       display: grid;
@@ -328,7 +502,19 @@
 </head>
 <body>
 
+<!-- LOGIN OVERLAY -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <div class="login-icon">📖</div>
+    <h2>欢迎加入读书打卡</h2>
+    <p>《稻盛和夫的成功方程式》<br>26天共读计划 · 4月26日—5月21日</p>
+    <input class="login-input" id="loginInput" type="text" placeholder="请输入您的姓名" maxlength="20" />
+    <button class="login-submit-btn" onclick="doLogin()">开始打卡 →</button>
+  </div>
+</div>
+
 <div class="header">
+
   <h1>📖 稻盛和夫的成功方程式</h1>
   <div class="formula">人生·工作的结果 = 思维方式 × 热情 × 能力</div>
   <div class="dates">2026年4月26日 — 5月21日 · 26天打卡计划</div>
@@ -369,11 +555,42 @@
 
   <!-- TODAY TAB -->
   <div class="tab-content active" id="tab-today">
+
+    <!-- 用户问候 -->
+    <div class="user-greeting" id="userGreeting">
+      <span class="greet-text" id="greetText">👋 你好！</span>
+      <span class="change-name" onclick="changeName()">修改姓名</span>
+    </div>
+
+    <!-- 字体调节 -->
+    <div class="font-controls">
+      <span class="font-size-label">字体：</span>
+      <button class="font-btn" onclick="changeFontSize(-1)">A−</button>
+      <button class="font-btn" onclick="changeFontSize(1)">A+</button>
+    </div>
+
     <div class="today-card" id="todayCard">
       <div class="day-badge" id="todayBadge">第?天</div>
       <h2 id="todayChapter">加载中...</h2>
       <div class="content-body" id="todayContent"></div>
     </div>
+
+    <!-- 录音区域 -->
+    <div class="record-area" id="recordArea">
+      <button class="record-btn" id="recordBtn" onclick="toggleRecord()">🎤</button>
+      <div class="record-info">
+        <div class="record-status" id="recordStatus">点击麦克风开始朗读计时</div>
+        <div class="record-duration" id="recordDuration"></div>
+      </div>
+    </div>
+
+    <!-- 感悟输入框 -->
+    <div class="reflection-area" id="reflectionArea">
+      <div class="reflection-label">📝 写下今日读书感悟</div>
+      <textarea class="reflection-input" id="reflectionInput" placeholder="读完后写下您的感悟，提交后完成今日打卡..."></textarea>
+      <div class="reflection-saved" id="reflectionSaved">✅ 感悟已保存</div>
+    </div>
+
     <button class="checkin-btn" id="checkinBtn" onclick="doCheckIn()">✅ 今日打卡</button>
     <div class="status-box not-started" id="statusBox">尚未开始打卡</div>
   </div>
@@ -429,6 +646,103 @@ const bookContent = {
   '2026-05-20': { chapter: '第25天（5月20日）：第五章 六项精进', content: `<p>六项精进之间存在着内在的联系。一个有一定能力的人，如果持续"付出了不亚于任何人的努力"，就会取得某种程度的成功。而人一旦成功，就会骄傲起来——所以第二项就是"要谦虚，不要骄傲"。</p><p><strong>六项精进内容：</strong></p><ol><li><strong>付出不亚于任何人的努力</strong><br>努力是一切生命都在承担的义务。只要喜欢，再努力也心甘。拼命工作可以磨炼灵魂。</li><li><strong>要谦虚、不要骄傲</strong><br>才能是上天所赐，将自己的才能用于为"公"是第一义。"谦受益"是中国古话。</li><li><strong>要每天反省</strong><br>每天检点自己的思想和行为，直视自我。</li><li><strong>活着，就要感谢</strong><br>"感谢之心"像地下水一样，滋润着我道德观的根基。只要活着，就要感谢。</li><li><strong>积善行、思利他</strong><br>积善之家必有余庆。言行之间留意关爱别人。真正为对方好，才是利他。</li><li><strong>不要有感性的烦恼</strong><br>活着就会遭遇各种困难和挫折，绝不能被它们击垮，绝不能逃避。正面对，垂直攀登，硬着头皮顶住，不忘初衷。</li></ol><p><strong>今日感悟：</strong>六项精进如此周而复始，就是人生最好的修炼。</p>` },
   '2026-05-21': { chapter: '第26天（5月21日）：后记', content: `<p>走进书店，关于"成功"的书籍丰富多彩。但其中大多数，都着眼于能力、手法、技术、技巧、计策等，甚至把军事上的"兵不厌诈"用到经营乃至其他领域。这种基本观念上的混乱，正是所有社会混乱现象的根源。</p><p>"稻盛的成功方程式"则旗帜鲜明，它把"思想·人格"放在第一位，而且指明它有正负。这个方程式犹如巨大的警钟，应该震撼我们这个追名逐利的社会。</p><blockquote>"在认真学习、深入思考、反复实践的过程中，不断驱动这种'显意识'，它才能进入'潜意识'。只有当'显意识'和'潜意识'都由正确观念占据，人才会走进悟境，才有所谓'厚积薄发'。"</blockquote><blockquote>"我从不奢望所有的人都能够接受我的哲学，但我一贯坚持自己的经营思想，并证明了它是成功的。"</blockquote><p style="text-align:center;margin-top:16px;font-size:1.1em;color:#f5c518;">🎉 26天打卡圆满完成！愿稻盛哲学的智慧永驻心中，指引我们走向正确而美好的人生！</p>` }
 };
+
+// ===== LOGIN =====
+const USER_KEY = 'daosheng_username';
+
+function doLogin() {
+  const input = document.getElementById('loginInput');
+  const name = input.value.trim();
+  if (!name) { input.style.borderColor = '#ff4757'; setTimeout(() => input.style.borderColor = '', 1000); return; }
+  localStorage.setItem(USER_KEY, name);
+  document.getElementById('loginOverlay').classList.remove('active');
+  showGreeting(name);
+  init();
+}
+
+function showGreeting(name) {
+  const el = document.getElementById('userGreeting');
+  document.getElementById('greetText').textContent = `👋 ${name}，你好！欢迎打卡`;
+  el.style.display = 'flex';
+}
+
+function changeName() {
+  document.getElementById('loginInput').value = localStorage.getItem(USER_KEY) || '';
+  document.getElementById('loginOverlay').classList.add('active');
+}
+
+// 支持回车登录
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('loginInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin();
+  });
+  const savedName = localStorage.getItem(USER_KEY);
+  if (savedName) {
+    showGreeting(savedName);
+    init();
+  } else {
+    document.getElementById('loginOverlay').classList.add('active');
+  }
+});
+
+// ===== FONT SIZE =====
+let currentFontSize = parseInt(localStorage.getItem('daosheng_fontsize') || '14');
+
+function applyFontSize() {
+  document.getElementById('todayContent').style.fontSize = currentFontSize + 'px';
+  const modalBody = document.getElementById('modalBody');
+  if (modalBody) modalBody.style.fontSize = currentFontSize + 'px';
+}
+
+function changeFontSize(delta) {
+  currentFontSize = Math.min(22, Math.max(12, currentFontSize + delta));
+  localStorage.setItem('daosheng_fontsize', currentFontSize);
+  applyFontSize();
+}
+
+// ===== RECORDING =====
+let recordTimer = null;
+let recordSeconds = 0;
+let isRecording = false;
+
+function toggleRecord() {
+  const btn = document.getElementById('recordBtn');
+  const status = document.getElementById('recordStatus');
+  const duration = document.getElementById('recordDuration');
+
+  if (!isRecording) {
+    isRecording = true;
+    recordSeconds = 0;
+    btn.classList.add('recording');
+    btn.textContent = '⏹';
+    status.className = 'record-status active';
+    status.textContent = '🔴 正在计时...';
+    recordTimer = setInterval(() => {
+      recordSeconds++;
+      const m = Math.floor(recordSeconds / 60);
+      const s = recordSeconds % 60;
+      duration.textContent = `已读 ${m > 0 ? m + '分' : ''}${s}秒`;
+    }, 1000);
+  } else {
+    isRecording = false;
+    clearInterval(recordTimer);
+    btn.classList.remove('recording');
+    btn.textContent = '🎤';
+    status.className = 'record-status';
+    const m = Math.floor(recordSeconds / 60);
+    const s = recordSeconds % 60;
+    const timeStr = `${m > 0 ? m + '分' : ''}${s}秒`;
+    status.textContent = `✅ 本次朗读：${timeStr}`;
+    duration.textContent = '点击麦克风可重新计时';
+    // 保存朗读时长到今日数据
+    const today = todayStr();
+    const checkins = getCheckins();
+    if (checkins[today] && typeof checkins[today] === 'object') {
+      checkins[today].readTime = timeStr;
+    }
+    saveCheckins(checkins);
+  }
+}
 
 // ===== CONFIG =====
 const START_DATE = '2026-04-26';
@@ -505,17 +819,33 @@ function renderToday() {
   badge.textContent = `第 ${dayIdx} 天`;
   chapter.textContent = data.chapter;
   contentEl.innerHTML = data.content;
+  applyFontSize();
 
   if (checkins[today]) {
+    const record = checkins[today];
+    const timeStr = typeof record === 'object' ? record.time : record;
+    const readTime = typeof record === 'object' ? record.readTime : '';
+    const reflection = typeof record === 'object' ? record.reflection : '';
+
     btn.textContent = '✅ 今日已打卡';
     btn.disabled = true;
     statusBox.className = 'status-box completed';
-    statusBox.textContent = `✅ 今日已打卡 · ${checkins[today]}`;
+    let statusText = `✅ 今日已打卡 · ${timeStr}`;
+    if (readTime) statusText += ` · ${readTime}`;
+    statusBox.textContent = statusText;
+
+    // 恢复感悟
+    if (reflection) {
+      document.getElementById('reflectionInput').value = reflection;
+      document.getElementById('reflectionSaved').style.display = 'block';
+    }
+    document.getElementById('reflectionInput').disabled = true;
   } else {
     btn.textContent = '✅ 今日打卡';
     btn.disabled = false;
     statusBox.className = 'status-box in-progress';
     statusBox.textContent = '📖 今日内容已解锁，请阅读后打卡';
+    document.getElementById('reflectionInput').disabled = false;
   }
 }
 
@@ -527,18 +857,37 @@ function doCheckIn() {
 
   const now = new Date();
   const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-  checkins[today] = timeStr;
+
+  // 读取感悟
+  const reflection = (document.getElementById('reflectionInput').value || '').trim();
+  // 读取朗读时长
+  const readTimeEl = document.getElementById('recordStatus');
+  const readTime = isRecording ? '' : (readTimeEl.textContent.includes('本次朗读') ? readTimeEl.textContent.replace('✅ ', '') : '');
+
+  checkins[today] = { time: timeStr, reflection, readTime };
   saveCheckins(checkins);
 
   document.getElementById('checkinBtn').textContent = '✅ 今日已打卡';
   document.getElementById('checkinBtn').disabled = true;
   document.getElementById('statusBox').className = 'status-box completed';
-  document.getElementById('statusBox').textContent = `✅ 今日已打卡 · ${timeStr}`;
+  let statusText = `✅ 今日已打卡 · ${timeStr}`;
+  if (readTime) statusText += ` · ${readTime}`;
+  document.getElementById('statusBox').textContent = statusText;
+
+  // 显示感悟已保存
+  if (reflection) {
+    const saved = document.getElementById('reflectionSaved');
+    saved.style.display = 'block';
+  }
+
+  // 停止录音计时
+  if (isRecording) toggleRecord();
 
   renderCalendar();
   renderHistory();
   updateStats();
 }
+
 
 // ===== STATS =====
 function updateStats() {
@@ -647,10 +996,19 @@ function renderHistory() {
     const dayIdx = getDayIndex(dateStr);
     const dateLabel = dateStr.replace('2026-', '').replace('-', '月') + '日';
 
+    let checkedLabel = '';
+    if (isChecked) {
+      const timeStr = typeof isChecked === 'object' ? isChecked.time : isChecked;
+      const reflection = typeof isChecked === 'object' ? isChecked.reflection : '';
+      const readTime = typeof isChecked === 'object' ? isChecked.readTime : '';
+      checkedLabel = `<div class="h-checked">✅ 已打卡 ${timeStr}${readTime ? ' · ' + readTime : ''}</div>`;
+      if (reflection) checkedLabel += `<div style="font-size:0.78em;color:#aaa;margin-top:4px;">💬 ${reflection.slice(0,40)}${reflection.length>40?'...':''}</div>`;
+    }
+
     return `<div class="history-item" onclick="showDayModal('${dateStr}')">
       <div class="h-date">${dateLabel} · 第${dayIdx}天 ${isFuture ? '<span style="color:#555">（未解锁）</span>' : ''}</div>
       <div class="h-chapter">${data.chapter}</div>
-      ${isChecked ? `<div class="h-checked">✅ 已打卡 ${isChecked}</div>` : (isFuture ? '' : '<div style="font-size:0.75em;color:#666;margin-top:4px;">未打卡</div>')}
+      ${isChecked ? checkedLabel : (isFuture ? '' : '<div style="font-size:0.75em;color:#666;margin-top:4px;">未打卡</div>')}
     </div>`;
   }).join('');
 }
@@ -678,7 +1036,8 @@ function switchTab(tab) {
 }
 
 // ===== START =====
-init();
+// init() 由登录逻辑控制调用
+
 </script>
 </body>
 </html>
