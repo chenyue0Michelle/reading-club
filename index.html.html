@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>《稻盛和夫的成功方程式》26天打卡计划</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      min-height: 100vh;
+      color: #e0e0e0;
+    }
+
+    /* ===== HEADER ===== */
+    .header {
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      padding: 20px;
+      text-align: center;
+    }
+    .header h1 {
+      font-size: 1.6em;
+      color: #f5c518;
+      text-shadow: 0 0 20px rgba(245,197,24,0.4);
+      margin-bottom: 6px;
+    }
+    .header .formula {
+      font-size: 0.95em;
+      color: #a0c4ff;
+      letter-spacing: 1px;
+    }
+    .header .dates {
+      font-size: 0.8em;
+      color: #888;
+      margin-top: 4px;
+    }
+
+    /* ===== PROGRESS BAR ===== */
+    .progress-section {
+      padding: 16px 20px 8px;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.82em;
+      color: #aaa;
+      margin-bottom: 6px;
+    }
+    .progress-bar {
+      height: 8px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #f5c518, #ff6b6b);
+      border-radius: 4px;
+      transition: width 0.6s ease;
+    }
+
+    /* ===== MAIN LAYOUT ===== */
+    .container {
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 12px 16px 40px;
+    }
+
+    /* ===== TABS ===== */
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.05);
+      color: #aaa;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85em;
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      background: rgba(245,197,24,0.2);
+      border-color: #f5c518;
+      color: #f5c518;
+    }
+
+    /* ===== TODAY CARD ===== */
+    .today-card {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .today-card .day-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, #f5c518, #ff6b6b);
+      color: #000;
+      font-weight: bold;
+      font-size: 0.78em;
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-bottom: 10px;
+    }
+    .today-card h2 {
+      font-size: 1.05em;
+      color: #f5c518;
+      margin-bottom: 14px;
+      line-height: 1.5;
+    }
+    .today-card .content-body {
+      font-size: 0.9em;
+      line-height: 1.9;
+      color: #ccc;
+    }
+    .today-card .content-body p { margin-bottom: 10px; }
+    .today-card .content-body blockquote {
+      border-left: 3px solid #f5c518;
+      padding: 8px 14px;
+      margin: 12px 0;
+      background: rgba(245,197,24,0.08);
+      border-radius: 0 8px 8px 0;
+      color: #f5c518;
+      font-style: italic;
+    }
+    .today-card .content-body strong { color: #fff; }
+    .today-card .content-body ul, .today-card .content-body ol {
+      padding-left: 20px;
+      margin: 8px 0;
+    }
+    .today-card .content-body li { margin-bottom: 6px; }
+
+    /* ===== CHECK-IN BUTTON ===== */
+    .checkin-btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #f5c518, #ff6b6b);
+      color: #000;
+      font-size: 1em;
+      font-weight: bold;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 16px;
+    }
+    .checkin-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    .checkin-btn:disabled {
+      background: #444;
+      color: #888;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* ===== STATUS BOX ===== */
+    .status-box {
+      text-align: center;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 0.88em;
+      margin-bottom: 16px;
+    }
+    .status-box.not-started { background: rgba(255,255,255,0.05); color: #888; }
+    .status-box.in-progress { background: rgba(245,197,24,0.1); color: #f5c518; }
+    .status-box.completed { background: rgba(39,174,96,0.15); color: #2ecc71; }
+
+    /* ===== CALENDAR ===== */
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+    }
+    .cal-header {
+      text-align: center;
+      font-size: 0.72em;
+      color: #666;
+      padding: 4px 0;
+    }
+    .cal-day {
+      aspect-ratio: 1;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.78em;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+      position: relative;
+    }
+    .cal-day.empty { background: transparent; cursor: default; }
+    .cal-day.future {
+      background: rgba(255,255,255,0.04);
+      color: #555;
+      cursor: default;
+    }
+    .cal-day.available {
+      background: rgba(255,255,255,0.08);
+      color: #aaa;
+    }
+    .cal-day.available:hover {
+      background: rgba(245,197,24,0.15);
+      border-color: #f5c518;
+      color: #f5c518;
+    }
+    .cal-day.today-marker {
+      background: rgba(245,197,24,0.2);
+      border-color: #f5c518;
+      color: #f5c518;
+      font-weight: bold;
+    }
+    .cal-day.checked {
+      background: linear-gradient(135deg, rgba(39,174,96,0.3), rgba(39,174,96,0.1));
+      border-color: #2ecc71;
+      color: #2ecc71;
+    }
+    .cal-day.checked::after {
+      content: '✓';
+      position: absolute;
+      bottom: 1px;
+      right: 3px;
+      font-size: 0.65em;
+      color: #2ecc71;
+    }
+
+    /* ===== HISTORY LIST ===== */
+    .history-list { display: flex; flex-direction: column; gap: 10px; }
+    .history-item {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .history-item:hover {
+      background: rgba(255,255,255,0.09);
+      border-color: rgba(245,197,24,0.3);
+    }
+    .history-item .h-date { font-size: 0.78em; color: #888; margin-bottom: 4px; }
+    .history-item .h-chapter { font-size: 0.9em; color: #f5c518; }
+    .history-item .h-checked { font-size: 0.75em; color: #2ecc71; margin-top: 4px; }
+
+    /* ===== TAB CONTENT ===== */
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* ===== MODAL ===== */
+    .modal-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    .modal-overlay.active { display: flex; align-items: flex-start; justify-content: center; }
+    .modal-box {
+      background: #1a2035;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 16px;
+      padding: 24px;
+      max-width: 680px;
+      width: 100%;
+      margin-top: 20px;
+    }
+    .modal-box h3 { color: #f5c518; font-size: 1em; margin-bottom: 14px; line-height: 1.5; }
+    .modal-body {
+      font-size: 0.88em;
+      line-height: 1.9;
+      color: #ccc;
+    }
+    .modal-body p { margin-bottom: 10px; }
+    .modal-body blockquote {
+      border-left: 3px solid #f5c518;
+      padding: 8px 14px;
+      margin: 12px 0;
+      background: rgba(245,197,24,0.08);
+      border-radius: 0 8px 8px 0;
+      color: #f5c518;
+      font-style: italic;
+    }
+    .modal-body strong { color: #fff; }
+    .modal-body ul, .modal-body ol { padding-left: 20px; margin: 8px 0; }
+    .modal-body li { margin-bottom: 6px; }
+    .modal-close {
+      margin-top: 16px;
+      width: 100%;
+      padding: 10px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #aaa;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9em;
+    }
+    .modal-close:hover { background: rgba(255,255,255,0.13); }
+
+    /* ===== LOGIN OVERLAY ===== */
+    .login-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .login-overlay.active { display: flex; }
+    .login-box {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 20px;
+      padding: 36px 28px;
+      max-width: 360px;
+      width: 100%;
+      text-align: center;
+    }
+    .login-box .login-icon { font-size: 3em; margin-bottom: 12px; }
+    .login-box h2 { color: #f5c518; font-size: 1.2em; margin-bottom: 6px; }
+    .login-box p { color: #888; font-size: 0.85em; margin-bottom: 24px; line-height: 1.6; }
+    .login-input {
+      width: 100%;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 10px;
+      color: #fff;
+      font-size: 1em;
+      padding: 12px 16px;
+      text-align: center;
+      margin-bottom: 16px;
+      font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    }
+    .login-input:focus { outline: none; border-color: #f5c518; }
+    .login-input::placeholder { color: #555; }
+    .login-submit-btn {
+      width: 100%;
+      padding: 13px;
+      background: linear-gradient(135deg, #f5c518, #ff6b6b);
+      color: #000;
+      font-size: 1em;
+      font-weight: bold;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    .login-submit-btn:hover { opacity: 0.9; }
+
+    /* ===== USER GREETING ===== */
+    .user-greeting {
+      display: none;
+      background: rgba(245,197,24,0.08);
+      border: 1px solid rgba(245,197,24,0.2);
+      border-radius: 10px;
+      padding: 10px 16px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.88em;
+    }
+    .user-greeting .greet-text { color: #f5c518; }
+    .user-greeting .change-name {
+      color: #666;
+      font-size: 0.8em;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    .user-greeting .change-name:hover { color: #aaa; }
+
+    /* ===== FONT SIZE CONTROLS ===== */
+    .font-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+      justify-content: flex-end;
+    }
+    .font-btn {
+      padding: 4px 12px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #ccc;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85em;
+      font-weight: bold;
+      transition: all 0.2s;
+    }
+    .font-btn:hover { background: rgba(245,197,24,0.2); border-color: #f5c518; color: #f5c518; }
+    .font-size-label { font-size: 0.78em; color: #666; }
+
+    /* ===== RECORDING ===== */
+    .record-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 12px 16px;
+      margin-bottom: 12px;
+    }
+    .record-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.08);
+      color: #ccc;
+      font-size: 1.3em;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+    .record-btn.recording {
+      border-color: #ff4757;
+      background: rgba(255,71,87,0.15);
+      color: #ff4757;
+      animation: pulse 1s infinite;
+    }
+    @keyframes pulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(255,71,87,0.4); }
+      50% { box-shadow: 0 0 0 8px rgba(255,71,87,0); }
+    }
+    .record-info { flex: 1; }
+    .record-status { font-size: 0.85em; color: #aaa; }
+    .record-status.active { color: #ff4757; }
+    .record-duration { font-size: 0.78em; color: #666; margin-top: 2px; }
+
+    /* ===== REFLECTION ===== */
+    .reflection-area {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    .reflection-label {
+      font-size: 0.82em;
+      color: #888;
+      margin-bottom: 8px;
+    }
+    .reflection-input {
+      width: 100%;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      color: #ddd;
+      font-size: 0.88em;
+      line-height: 1.7;
+      padding: 10px 12px;
+      resize: vertical;
+      min-height: 80px;
+      font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    }
+    .reflection-input:focus {
+      outline: none;
+      border-color: rgba(245,197,24,0.4);
+      background: rgba(255,255,255,0.08);
+    }
+    .reflection-input::placeholder { color: #555; }
+    .reflection-saved {
+      font-size: 0.78em;
+      color: #2ecc71;
+      margin-top: 6px;
+      display: none;
+    }
+
+    /* ===== STATS ===== */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .stat-card {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 14px 10px;
+      text-align: center;
+    }
+    .stat-card .num { font-size: 1.6em; font-weight: bold; color: #f5c518; }
+    .stat-card .label { font-size: 0.75em; color: #888; margin-top: 4px; }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN OVERLAY -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <div class="login-icon">📖</div>
+    <h2>欢迎加入读书打卡</h2>
+    <p>《稻盛和夫的成功方程式》<br>26天共读计划 · 4月26日—5月21日</p>
+    <input class="login-input" id="loginInput" type="text" placeholder="请输入您的姓名" maxlength="20" />
+    <button class="login-submit-btn" onclick="doLogin()">开始打卡 →</button>
+  </div>
+</div>
+
+<div class="header">
+
+  <h1>📖 稻盛和夫的成功方程式</h1>
+  <div class="formula">人生·工作的结果 = 思维方式 × 热情 × 能力</div>
+  <div class="dates">2026年4月26日 — 5月21日 · 26天打卡计划</div>
+</div>
+
+<div class="progress-section">
+  <div class="progress-label">
+    <span id="progressText">打卡进度</span>
+    <span id="progressCount">0 / 26</span>
+  </div>
+  <div class="progress-bar">
+    <div class="progress-fill" id="progressFill" style="width:0%"></div>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="num" id="statChecked">0</div>
+      <div class="label">已打卡</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" id="statStreak">0</div>
+      <div class="label">连续天数</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" id="statRemain">26</div>
+      <div class="label">剩余天数</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('today')">📅 今日</button>
+    <button class="tab-btn" onclick="switchTab('calendar')">🗓 日历</button>
+    <button class="tab-btn" onclick="switchTab('history')">📋 记录</button>
+  </div>
+
+  <!-- TODAY TAB -->
+  <div class="tab-content active" id="tab-today">
+
+    <!-- 用户问候 -->
+    <div class="user-greeting" id="userGreeting">
+      <span class="greet-text" id="greetText">👋 你好！</span>
+      <span class="change-name" onclick="changeName()">修改姓名</span>
+    </div>
+
+    <!-- 字体调节 -->
+    <div class="font-controls">
+      <span class="font-size-label">字体：</span>
+      <button class="font-btn" onclick="changeFontSize(-1)">A−</button>
+      <button class="font-btn" onclick="changeFontSize(1)">A+</button>
+    </div>
+
+    <div class="today-card" id="todayCard">
+      <div class="day-badge" id="todayBadge">第?天</div>
+      <h2 id="todayChapter">加载中...</h2>
+      <div class="content-body" id="todayContent"></div>
+    </div>
+
+    <!-- 录音区域 -->
+    <div class="record-area" id="recordArea">
+      <button class="record-btn" id="recordBtn" onclick="toggleRecord()">🎤</button>
+      <div class="record-info">
+        <div class="record-status" id="recordStatus">点击麦克风开始朗读计时</div>
+        <div class="record-duration" id="recordDuration"></div>
+      </div>
+    </div>
+
+    <!-- 感悟输入框 -->
+    <div class="reflection-area" id="reflectionArea">
+      <div class="reflection-label">📝 写下今日读书感悟</div>
+      <textarea class="reflection-input" id="reflectionInput" placeholder="读完后写下您的感悟，提交后完成今日打卡..."></textarea>
+      <div class="reflection-saved" id="reflectionSaved">✅ 感悟已保存</div>
+    </div>
+
+    <button class="checkin-btn" id="checkinBtn" onclick="doCheckIn()">✅ 今日打卡</button>
+    <div class="status-box not-started" id="statusBox">尚未开始打卡</div>
+  </div>
+
+  <!-- CALENDAR TAB -->
+  <div class="tab-content" id="tab-calendar">
+    <div id="calendarContainer"></div>
+  </div>
+
+  <!-- HISTORY TAB -->
+  <div class="tab-content" id="tab-history">
+    <div class="history-list" id="historyList"></div>
+  </div>
+
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal-box">
+    <h3 id="modalTitle"></h3>
+    <div class="modal-body" id="modalBody"></div>
+    <button class="modal-close" onclick="closeModal()">关闭</button>
+  </div>
+</div>
+
+<script>
+// ===== BOOK CONTENT (内嵌，无需外部js文件) =====
+const bookContent = {
+  '2026-04-26': { chapter: `第1天（04月26日）：新版序言 - 传播哲学、实践利他`, content: `<p>稻盛和夫先生是日本京瓷株式会社和KDDI株式会社的创始人，两家企业都进入了世界500强。他不仅是一位成功的企业家，更是一位深具智慧的哲学家。</p><p>本书作者曹岫云先生于2001年首次聆听稻盛先生讲演，深受感动。此后他致力于翻译和传播稻盛哲学，撰写文章介绍稻盛先生的经营思想。本书在出版过程中经历了波折，但作者始终坚持，因为他深信稻盛哲学对中国企业家具有重要的参考价值。</p><p>稻盛哲学的核心是"作为人，何谓正确"这一命题。稻盛先生认为，经营企业就是经营人心，而人心的根本在于做人的准则。这种哲学不仅适用于企业经营，更适用于每个人的人生。</p><h4>新版序言原文</h4><p>稻盛和夫先生是日本京瓷株式会社和KDDI株式会社的创始人，两家企业都进入了世界500强。2010年，他又出任日本航空株式会社会长，成功地让日航扭亏为盈。稻盛先生不仅是一位成功的企业家，更是一位深具智慧的哲学家。</p><p>2001年10月，在天津第一届中日企业经营哲学国际研讨会上，我第一次见到稻盛先生，并聆听了他的讲演。当我听到稻盛先生讲"成功方程式"和"作为人，何谓正确"时，我深受感动。我想："这是多么简单而又深刻的道理啊！"</p><p>从那以后，我开始收集稻盛先生的全部著作，认真学习。在学习过程中，我发现盛和塾的企业家塾生们都有许多感人的故事——他们因为实践稻盛哲学，而使自己的企业获得了巨大的成功。</p><p>2005年，我在日本滋贺县参加盛和塾例会时，深深感受到了稻盛先生谦逊的人格魅力。稻盛先生虽然是两家世界500强企业的创始人，但他始终保持着谦逊的态度。他说："我只是一个普通人，只是比别人更努力一些而已。"</p><p>稻盛哲学对中国企业家具有重要的参考价值。在中国经济高速发展的今天，我们不仅需要学习西方的管理技术，更需要学习稻盛先生这种以人为本的经营哲学。</p><p>本书在出版过程中经历了许多波折。有人质疑："稻盛哲学真的适合中国企业吗？"但我始终坚持，因为我深信稻盛哲学对中国企业家具有重要的参考价值。</p><p>稻盛哲学的核心是"作为人，何谓正确"这一命题。稻盛先生认为，经营企业就是经营人心，而人心的根本在于做人的准则。这种哲学不仅适用于企业经营，更适用于每个人的人生。</p><p><strong>今日感悟：</strong></p><p>传播正确的哲学需要使命感，实践利他需要坚持。稻盛哲学的价值在于它直指人心，回答了我们每个人在人生道路上都会遇到的问题。当我们面对人生的困惑和挑战时，不妨问问自己："作为人，何谓正确？"这个简单的问题，可能会给我们带来深刻的启示。</p>` },
+  '2026-04-27': { chapter: `第2天（04月27日）：引言（上）`, content: `<p>2001年，在天津第一届中日企业经营哲学国际研讨会上，作者曹岫云先生第一次见到稻盛和夫先生，并聆听了他的讲演。稻盛先生提出的"成功方程式"和"作为人何谓正确"深深打动了在场的每一个人。</p><h4>引言原文</h4><p>稻盛和夫先生是日本京瓷株式会社和KDDI株式会社的创始人，两家企业都进入了世界500强。2010年，他又出任日本航空株式会社会长，成功地让日航扭亏为盈。稻盛先生不仅是一位成功的企业家，更是一位深具智慧的哲学家。</p><p>2001年10月，在天津第一届中日企业经营哲学国际研讨会上，我第一次见到稻盛先生，并聆听了他的讲演。当我听到稻盛先生讲"成功方程式"和"作为人，何谓正确"时，我深受感动。我想："这是多么简单而又深刻的道理啊！"</p><p>稻盛先生说：</p><blockquote>"我从不奢望所有的人都能够接受我的哲学，但我一贯坚持自己的经营思想，并证明了它是成功的。"</blockquote><p>这句话深深打动了我。从那以后，我开始收集稻盛先生的全部著作，认真学习。在学习过程中，我发现盛和塾的企业家塾生们都有许多感人的故事——他们因为实践稻盛哲学，而使自己的企业获得了巨大的成功。</p><p>有一位塾生，他的企业在学习了稻盛哲学后，业绩大幅提升。他说："稻盛哲学改变了我的思维方式，也改变了我的企业。"</p><p>还有一位塾生，他在企业面临困境时，想起了稻盛先生说的'付出不亚于任何人的努力'，于是带领员工日夜奋战，最终渡过了难关。</p><p>这些故事让我深信，稻盛哲学不仅是一种理论，更是一种可以实践、可以验证的智慧。</p><p><strong>今日感悟：</strong></p><p>真正的智慧往往简单而深刻。稻盛先生用简单的语言道出了人生的真谛，这种智慧值得我们每个人去学习和实践。当我们面对困难时，不要轻易放弃，而要像稻盛先生说的那样，"付出不亚于任何人的努力"。</p>` },
+  '2026-04-28': { chapter: `第3天（04月28日）：引言（下）`, content: `<p>作者参加了盛和塾的各类活动，深入学习稻盛哲学。2005年，他在日本滋贺县参加盛和塾例会时，深深感受到了稻盛先生谦逊的人格魅力。</p><h4>继续引言原文</h4><p>2005年，我在日本滋贺县参加盛和塾例会时，深深感受到了稻盛先生谦逊的人格魅力。那天，稻盛先生亲自来到会场，与塾生们交流。他没有一点大企业家的架子，就像一位慈祥的长者，耐心地回答每一个问题。</p><p>有一位塾生问稻盛先生："您创办了京瓷和KDDI两家世界500强企业，您觉得自己成功的秘诀是什么？"</p><p>稻盛先生微笑着回答："我只是一个普通人，只是比别人更努力一些而已。如果要说有什么秘诀，那就是'付出不亚于任何人的努力'和'作为人，何谓正确'。"</p><p>稻盛先生虽然是两家世界500强企业的创始人，但他始终保持着谦逊的态度。他说："我只是一个普通人，只是比别人更努力一些而已。"</p><p>这种谦逊不是虚伪的客套，而是发自内心的真诚。稻盛先生认为，自己的成功不是靠个人的聪明才智，而是靠正确的思维方式和不懈的努力。</p><p>稻盛哲学对中国企业家具有重要的参考价值。在中国经济高速发展的今天，我们不仅需要学习西方的管理技术，更需要学习稻盛先生这种以人为本的经营哲学。</p><p>在西方管理学中，强调的是制度、流程、技术。而稻盛哲学强调的是人心、道德、价值观。这两种管理思想并不是对立的，而是可以相互补充的。</p><p>我认为，中国企业要走向世界，既需要学习西方的管理技术，也需要建立自己的企业文化。而稻盛哲学正好可以为我们提供借鉴。</p><p><strong>今日感悟：</strong></p><p>谦逊是一种美德，更是一种力量。稻盛先生的成功不仅在于他的经营才能，更在于他高尚的人格。真正的成功者，不是那些趾高气扬的人，而是那些始终保持谦逊、不断学习和进步的人。</p>` },
+  '2026-04-29': { chapter: `第4天（04月29日）：第一章 成功方程式 - 方程式与思想·人格`, content: `<p>稻盛先生提出了著名的成功方程式：</p><p><strong>人生·工作的结果 = 思维方式 × 热情 × 能力</strong></p><h4>第一章原文</h4><p>稻盛先生提出了著名的成功方程式：</p><p><strong>人生·工作的结果 = 思维方式 × 热情 × 能力</strong></p><p>这个方程式包含三个要素：</p><p><strong>能力</strong>：先天的智力和体力，范围是0~100。能力是指一个人天生的智力、体力、健康状况等。这些因素在很大程度上是由遗传和先天条件决定的，不是个人能够完全控制的。</p><p><strong>热情</strong>：努力的程度，范围是0~100。热情是指一个人对工作的投入程度、努力程度。这与能力不同，热情是由个人的意志决定的。无论能力高低，只要愿意付出努力，热情就可以达到很高的水平。</p><p><strong>思维方式</strong>：思想·人格，范围是-100~+100。思维方式是指一个人的人生态度、价值观、道德观等。这是最重要的要素，因为它有方向性。思维方式可以是正的，也可以是负的。</p><p>为什么思维方式是相乘而不是相加？稻盛先生解释说，如果是相加，即使思维方式为负，只要能力和热情足够高，结果仍然是正的。比如：能力100 + 热情100 + 思维方式(-50) = 150，结果还是正的。</p><p>但相乘就不同了——如果思维方式为负，无论能力和热情多高，结果都是负的。比如：能力100 × 热情100 × 思维方式(-1) = -10000，结果是巨大的负数。</p><p>稻盛先生说：</p><blockquote>"能力一般但努力的人，可以超越天才。"</blockquote><p>这句话的意思是，即使一个人的先天能力不是很强，但只要他有足够的热情（努力），并且保持正确的思维方式，他就能取得超越天才的成就。</p><p>相反，如果一个人能力很强，也很努力，但思维方式是负面的（比如自私自利、损人利己），那么他的能力和努力越大，对社会的危害就越大。</p><p><strong>今日感悟：</strong></p><p>思维方式是最重要的要素，因为它有方向性。一个人的能力再强、再努力，如果方向错了，结果必然是负面的。这提醒我们，在追求成功的过程中，首先要确保自己的思维方式是正确的，要时常问自己："作为人，何谓正确？"</p>` },
+  '2026-04-30': { chapter: `第5天（04月30日）：第一章 成功方程式 - 思想·人格的含义`, content: `<p>方程式中最重要的要素是"思想·人格"。稻盛先生解释说，这包括：</p><h4>继续第一章原文</h4><p>方程式中最重要的要素是"思想·人格"。稻盛先生解释说，这包括：</p><p><strong>人格侧面：</strong></p><p>稻盛先生认为，一个人的人格包括以下品质：</p><ul><li><strong>公正</strong>：不偏不倚，公平正直。在处理事情时，不受个人感情和利益的影响，以客观公正的态度对待一切。</li></ul><ul><li><strong>诚实</strong>：诚实守信，不说谎，不欺骗。诚实是做人的基本准则，也是建立信任关系的基础。</li></ul><ul><li><strong>开朗</strong>：心态积极乐观，不抱怨，不消极。开朗的心态能够感染周围的人，创造良好的工作氛围。</li></ul><ul><li><strong>勇敢</strong>：敢于面对困难，敢于坚持正义。勇敢不是没有恐惧，而是在恐惧面前仍然坚持正确的做法。</li></ul><ul><li><strong>谦虚</strong>：不自大，不骄傲。谦虚使人进步，骄傲使人落后。稻盛先生特别强调谦虚的重要性。</li></ul><ul><li><strong>善良</strong>：心地善良，关爱他人。善良不是软弱，而是一种力量，能够赢得他人的尊重和信任。</li></ul><ul><li><strong>克己</strong>：克制自己的欲望和冲动。人都有本能的欲望，但如果不加以克制，就会做出错误的判断和行为。</li></ul><ul><li><strong>利他</strong>：为他人着想，帮助他人。利他不是牺牲自己的利益，而是在追求自己利益的同时，也考虑他人的利益。</li></ul><p><strong>科学侧面：</strong></p><p>除了人格侧面，稻盛先生还强调了科学侧面：</p><ul><li><strong>实事求是</strong>：按照事物的本来面目去认识和处理问题，不主观臆断，不歪曲事实。</li></ul><ul><li><strong>实践认识论</strong>：认识来源于实践，又指导实践。理论必须与实践相结合，在实践中检验和发展理论。</li></ul><p>人格与科学是相辅相成的。一个人只有具备了高尚的人格，才能在科学上取得真正的成就。反之，如果人格有缺陷，即使科学能力再强，也难以取得真正的成功。</p><p>稻盛先生说：</p><blockquote>"人格是人生的方向盘，能力是发动机。如果方向盘失灵，发动机再强大，也会走向毁灭。"</blockquote><p><strong>今日感悟：</strong></p><p>"思想·人格"不是抽象的概念，而是具体的行为准则。它体现在我们日常的一举一动中，是我们做人做事的根本。我们要时刻注意自己的言行，培养高尚的人格，这样才能在人生的道路上走得更远、更稳。</p>` },
+  '2026-05-01': { chapter: `第6天（05月01日）：第一章 成功方程式 - 三要素关系与提升方法`, content: `<p>三要素是相乘关系，这意味着：</p><h4>继续第一章原文</h4><p>三要素是相乘关系，这意味着：</p><ul><li>如果思维方式为负，结果必为负</li><li>即使能力只有30，热情100，思维方式100，结果也是300000</li><li>即使能力100，热情100，思维方式-1，结果也是-10000</li></ul><p>希特勒就是反面例子：他有很强的能力和极大的热情，但思维方式是极端负面的，所以给人类带来了巨大的灾难。</p><p>稻盛先生说：</p><blockquote>"能力和努力固然重要，但更重要的是思维方式。因为思维方式有方向性，方向错了，能力和努力越大，危害就越大。"</blockquote><p><strong>如何提升思想·人格？</strong></p><p>稻盛先生提出了三个方法：</p><ol><li><strong>学习</strong>：阅读经典，学习先贤的智慧</li></ol><p>学习是提升思想·人格的基础。通过阅读经典著作，我们可以汲取先贤的智慧，开阔自己的视野，提升自己的思想境界。稻盛先生本人就是一位热爱学习的人，他阅读了大量的哲学、宗教、历史等方面的书籍。</p><ol><li><strong>反省</strong>：每天反省自己的思想和行为</li></ol><p>反省是进步的关键。每天结束时，我们应该回顾一天的言行，检查自己是否有不当之处，是否有需要改进的地方。稻盛先生每天都会进行反省，他说："反省就像照镜子，可以让我们看清自己的真实面貌。"</p><ol><li><strong>实践</strong>：在实践中检验和提升自己的思想</li></ol><p>学习到的知识和道理，必须在实践中检验和运用。只有通过实践，我们才能真正理解和掌握这些道理，才能将它们转化为自己的思想·人格。</p><p>稻盛先生说：</p><blockquote>"知道不等于做到，做到不等于做好。只有在实践中不断磨练，才能真正提升自己。"</blockquote><p><strong>今日感悟：</strong></p><p>思想·人格是可以提升的，关键在于我们是否愿意学习、反省和实践。这是一个持续一生的过程。我们不能指望一夜之间就成为一个高尚的人，但只要我们每天坚持学习、反省和实践，日积月累，我们的思想·人格就会不断提升，我们的人生也会因此变得更加美好。</p>` },
+  '2026-05-02': { chapter: `第7天（05月02日）：第二章 成功方程式的产生 - 实践中得出理论`, content: `<p>稻盛先生是如何创造出成功方程式的呢？他说：</p><h4>第二章原文</h4><p>稻盛先生是如何创造出成功方程式的呢？他说：</p><blockquote>"从实践中得出理论，从现象中看出本质。"</blockquote><p>创造需要：</p><ol><li><strong>集中意识</strong></li></ol><p>集中意识是指将注意力集中在某一事物上，排除其他干扰。稻盛先生说："只有集中意识，才能看清事物的本质。"当我们全神贯注地思考一个问题时，我们的思维就会变得敏锐，就能看到平时看不到的东西。</p><ol><li><strong>调动潜意识</strong></li></ol><p>潜意识是我们意识之下的心理活动。稻盛先生认为，潜意识中蕴含着巨大的能量，如果我们能够调动潜意识，就能获得意想不到的灵感和智慧。</p><ol><li><strong>苦苦思索</strong></li></ol><p>创造不是轻松的事情，需要付出艰苦的努力。稻盛先生说："只有经过苦苦思索，才能产生真正的创造。"这种思索不是表面的思考，而是深入的、持续的、甚至是痛苦的思考过程。</p><p>稻盛先生年轻时，他的叔叔因为负面的"意识"而生病去世，这件事给了他深刻的启示。他意识到，人的心态会影响人的命运。</p><p>稻盛先生的叔叔是一个悲观的人，总是担心这担心那。结果，他真的生病了，而且病情越来越严重。稻盛先生观察到，叔叔的病不仅仅是身体上的，更是心理上的。负面的心态吸引了负面的结果。</p><p>后来，稻盛先生在创建京瓷公司时，为了鼓励普通员工，创造了这个方程式。当时，京瓷的员工大多是普通的技术工人，他们没有高学历，也没有丰富的经验。稻盛先生想，怎样才能让这些普通员工也能取得成功呢？</p><p>于是，他创造了这个方程式，告诉他们：即使能力一般，只要努力，并且保持正确的思维方式，就能取得成功。他将"能力、努力、思想·人格"的顺序调整为"思维方式 × 热情 × 能力"，强调思维方式的重要性。</p><p><strong>今日感悟：</strong></p><p>真正的智慧来自实践。稻盛先生不是凭空想象出这个方程式，而是在长期的经营实践中总结出来的。这提醒我们，要善于从实践中学习，从现象中看出本质，这样才能获得真正的智慧。</p>` },
+  '2026-05-03': { chapter: `第8天（05月03日）：第二章 成功方程式的产生 - 肺结核和心态`, content: `<p>稻盛先生13岁时患了肺结核，这在当时是不治之症。他阅读了《生命的实相》这本书，书中说：</p><h4>继续第二章原文</h4><p>稻盛先生13岁时患了肺结核，这在当时是不治之症。他阅读了《生命的实相》这本书，书中说：</p><blockquote>"心态吸引灾难，恐惧招致疾病。"</blockquote><p>稻盛先生意识到，自己之所以患病，是因为内心充满了恐惧。当时，他的叔叔和婶婶都死于肺结核，他非常害怕自己也会得这种病。这种恐惧的心态，反而吸引了他最害怕的事情。</p><p>当他改变心态，不再恐惧，而是积极面对时，他的病情开始好转，最终康复。这个经历让稻盛先生深刻领悟到"心态"的重要性。</p><p>稻盛先生说：</p><blockquote>"人生的遭遇，全由心态所造。"</blockquote><p>这句话的意思是，我们的人生遭遇，很大程度上是由我们的心态决定的。如果我们心态积极，就会吸引积极的结果；如果我们心态消极，就会吸引消极的结果。</p><p>稻盛先生后来回忆说：</p><blockquote>"那次患病是我人生的转折点。如果不是那次经历，我可能不会如此深刻地理解心态的重要性，也不会创造出成功方程式。"</blockquote><p>这个经历让稻盛先生明白了一个道理：心态不仅影响我们的身体健康，还影响我们的命运。一个积极的心态，可以让我们战胜困难，取得成功；一个消极的心态，可以让我们陷入困境，走向失败。</p><p><strong>今日感悟：</strong></p><p>心态决定命运。当我们以积极的心态面对困难时，困难就会变成成长的机会；当我们以消极的心态面对困难时，困难就会变成灾难。这提醒我们，要时刻保持积极的心态，不要被恐惧和担忧所控制。正如稻盛先生所说："人生的遭遇，全由心态所造。"</p>` },
+  '2026-05-04': { chapter: `第9天（05月04日）：第二章 成功方程式的产生 - 水库式经营与愿望`, content: `<p>松下幸之助先生在一次讲演中提出了"水库式经营"的概念。他说：</p><h4>继续第二章原文</h4><p>松下幸之助先生在一次讲演中提出了"水库式经营"的概念。他说：</p><blockquote>"你必须得这么想。"</blockquote><p>这句话的意思是：思念是"因"，没有因哪有果。只有强烈的愿望，才能带来实际的结果。</p><p>当时，有一位听众问松下先生："怎样才能做到水库式经营呢？"松下先生回答说："你必须得这么想。"这个回答让在场的人都很困惑，但稻盛先生却深受触动。</p><p>稻盛先生理解，松下先生的意思是：只有当你发自内心地、强烈地想要实现某个目标时，这个目标才有可能实现。如果只是在口头上说说，心里并不真正相信，那么目标就不可能实现。</p><p>稻盛先生还受到中村天风哲学的影响。天风先生说：</p><blockquote>"积极心态决定人生。"</blockquote><p>中村天风是日本著名的哲学家和武术家。他年轻时身体虚弱，医生说他活不过20岁。但他通过修炼瑜伽和禅道，不仅恢复了健康，还活到了80多岁。他的经历证明了积极心态的力量。</p><p>稻盛先生将这些思想融会贯通，形成了自己的哲学体系。他强调：</p><blockquote>"强烈而持久的愿望是成功的关键。"</blockquote><p>稻盛先生说，愿望有三个层次：</p><ol><li><strong>愿望</strong>：一般的想法，想要做某事</li><li><strong>强烈的愿望</strong>：非常想做某事，愿意为之付出努力</li><li><strong>渗透到潜意识的愿望</strong>：愿望已经成为信念，在潜意识中不断驱动我们行动</li></ol><p>只有达到第三个层次的愿望，才能真正带来成功。</p><p><strong>今日感悟：</strong></p><p>"你必须得这么想"——这句话看似简单，却蕴含着深刻的道理。只有发自内心的强烈愿望，才能驱动我们克服困难，实现目标。这提醒我们，在设定目标时，不仅要明确目标是什么，更要让自己真正相信这个目标是可以实现的，并且愿意为之付出全部努力。</p>` },
+  '2026-05-05': { chapter: `第10天（05月05日）：第三章 成功三要素（能力）- 如实承认与超越平庸`, content: `<p>成功三要素之一是"能力"。稻盛先生说：</p><h4>第三章（能力篇）原文</h4><p>成功三要素之一是"能力"。稻盛先生说：</p><blockquote>"做不到的事要如实承认。"</blockquote><p>承认自己的不足，是提升能力的第一步。只有如实承认，才能找到改进的方向。稻盛先生认为，很多人之所以无法提升，是因为他们不愿意承认自己的不足，总是找借口，总是把责任推给别人或环境。</p><p>稻盛先生说：</p><blockquote>"承认自己的不足，不是软弱，而是勇气。只有承认不足，才能找到改进的方向。"</blockquote><p><strong>超越平庸：</strong></p><p>稻盛先生鼓励员工向"第一"挑战。他说：</p><blockquote>"战胜自己是最伟大的能力。"</blockquote><p>所谓超越平庸，不是超越别人，而是超越自己。每个人最大的敌人不是别人，而是自己。只有战胜了自己的惰性、恐惧、欲望，才能真正取得成功。</p><p>稻盛先生在京瓷公司经常对员工说：</p><blockquote>"不要满足于现状，要不断挑战自己，超越自己。"</blockquote><p>意志的强弱也是能力的一部分。一个人可能智力一般，但如果他有坚强的意志，就能取得超越常人的成就。相反，一个人即使智力超群，如果意志薄弱，也很难取得成功。</p><p>稻盛先生说：</p><blockquote>"能力有先天的部分，也有后天的部分。先天的部分我们无法改变，但后天的部分我们可以通过努力来提升。"</blockquote><p><strong>今日感悟：</strong></p><p>能力不仅仅是智力，还包括意志、毅力等。承认不足不是软弱，而是智慧；超越平庸不是梦想，而是可能。我们要勇于承认自己的不足，同时要有坚强的意志，不断挑战自己，超越自己。只有这样，我们才能不断提升自己的能力，取得更大的成就。</p>` },
+  '2026-05-06': { chapter: `第11天（05月06日）：第三章 成功三要素（能力）- 胆大心细与抑制本能`, content: `<p><strong>胆大心细：</strong></p><h4>继续第三章（能力篇）原文</h4><p>事业需要两种性格——既要有胆大的魄力，又要有心细的谨慎。稻盛先生说：</p><blockquote>"事业需要两种性格，缺一不可。"</blockquote><p>所谓胆大，是指敢于冒险，敢于挑战，敢于做别人不敢做的事情。所谓心细，是指做事认真，注重细节，不放过任何可能的问题。</p><p>稻盛先生认为，这两种性格看似矛盾，但实际上是相辅相成的。只有胆大而没有心细，就会鲁莽行事，容易失败；只有心细而没有胆大，就会畏首畏尾，错失机会。</p><p>稻盛先生本人就是胆大心细的典范。他在创建京瓷时，敢于挑战当时的技术难题，这是胆大；同时，他对每一个细节都严格要求，这是心细。</p><p><strong>抑制本能心：</strong></p><p>人有许多本能的欲望，如果任由本能驱使，就会做出错误的判断。稻盛先生说：</p><blockquote>"让理性发挥作用。"</blockquote><p>本能是人与生俱来的欲望和冲动，如食欲、性欲、攻击欲等。这些本能本身并没有好坏之分，但如果不加控制，就会让我们做出错误的判断和行为。</p><p>稻盛先生说：</p><blockquote>"人要学会控制自己的本能，让理性来指导自己的行为。"</blockquote><p><strong>将意识聚焦：</strong></p><p>稻盛先生提出了"有意注意"的概念。他说：</p><blockquote>"将意识聚焦，才能看清事物的本质。"</blockquote><p>所谓"有意注意"，是指有意识地、主动地将注意力集中在某一事物上。这与"无意注意"相对，无意注意是被动的、无意识的注意。</p><p>稻盛先生认为，"有意注意"是一种可以培养的能力。通过训练，我们可以让自己在任何时候都能将注意力集中在需要关注的事物上。</p><p><strong>能力用将来进行时：</strong></p><p>不要只看现在的能力，要相信人的潜能是无限的。稻盛先生说：</p><blockquote>"能力用将来进行时。"</blockquote><p>这句话的意思是，我们不要只关注自己现在有多少能力，而要相信自己未来可以拥有更多的能力。人的潜能是无限的，只要我们愿意努力，就能不断提升自己的能力。</p><p><strong>今日感悟：</strong></p><p>能力的培养需要平衡——既要有胆量，又要有细心；既要发挥本能，又要抑制过度的本能；既要看到现在，又要相信未来。这提醒我们，在培养能力的过程中，要注意平衡发展，不要走极端。</p>` },
+  '2026-05-07': { chapter: `第12天（05月07日）：第三章 成功三要素（能力）- 塑造人格与问答`, content: `<p>能力的发挥需要高尚人格的驾驭。稻盛先生说：</p><h4>继续第三章（能力篇）原文</h4><p>能力的发挥需要高尚人格的驾驭。稻盛先生说：</p><blockquote>"塑造自己的人格，不做才能的奴隶。"</blockquote><p>人格是主人，才能是工具。如果一个人只有才能而没有人格，他就会成为才能的奴隶，最终走向失败。</p><p>稻盛先生说：</p><blockquote>"才能本身是中性的，它可以用于好的目的，也可以用于坏的目的。关键在于使用才能的人的人格。"</blockquote><p>历史上有很多例子，一些能力超群的人，因为没有高尚的人格，最终走上了邪路，给社会带来了巨大的危害。相反，一些能力一般的人，因为有着高尚的人格，最终成就了伟大的事业。</p><p><strong>领导人资质：</strong></p><p>领导人的资质有天生的一面，也有培养的一面。稻盛先生认为，通过学习和实践，每个人都可以提升自己的领导能力。</p><p>稻盛先生说：</p><blockquote>"领导人最重要的资质不是能力，而是人格。一个有人格魅力的领导人，可以凝聚团队，激发团队的潜力。"</blockquote><p><strong>能力的七种类型：</strong></p><p>稻盛先生将能力分为七种类型：</p><ol><li><strong>技术能力</strong>：掌握专业技术的能力。这是从事某一专业工作的基础。</li></ol><ol><li><strong>管理能力</strong>：组织、协调、控制的能力。这是管理人员必备的能力。</li></ol><ol><li><strong>沟通能力</strong>：与人交流、协调的能力。这是现代社会中非常重要的能力。</li></ol><ol><li><strong>创新能力</strong>：创造新事物、新方法的能力。这是推动社会进步的重要力量。</li></ol><ol><li><strong>决策能力</strong>：在复杂情况下做出正确判断的能力。这是领导人必备的能力。</li></ol><ol><li><strong>执行能力</strong>：将计划付诸实施的能力。这是将想法变为现实的关键。</li></ol><ol><li><strong>学习能力</strong>：学习新知识、新技能的能力。这是适应不断变化的环境的基础。</li></ol><p>稻盛先生认为，这七种能力都很重要，但最重要的是学习能力。因为只有具备学习能力，才能不断提升其他能力。</p><p><strong>今日感悟：</strong></p><p>能力是工具，人格是方向。只有方向正确，工具才能发挥正面作用；方向错误，工具越强大，危害越大。这提醒我们，在提升能力的同时，更要注重人格的修养。只有人格高尚，能力才能真正发挥正面的作用。</p>` },
+  '2026-05-08': { chapter: `第13天（05月08日）：第三章 成功三要素（努力）- 工作的意义与突破壁障`, content: `<p>成功三要素之二是"努力"。稻盛先生说：</p><h4>第三章（努力篇）原文</h4><p>成功三要素之二是"努力"。稻盛先生说：</p><blockquote>"工作的意义不仅是赚钱，更是精神满足。"</blockquote><p>很多人认为，工作的目的就是为了赚钱，为了养家糊口。但稻盛先生认为，这只是工作的表层意义。工作的深层意义在于实现自我价值，在于通过工作来磨练自己的灵魂，提升自己的品格。</p><p>稻盛先生说：</p><blockquote>"工作是最好的修行。通过工作，我们可以磨练自己的意志，提升自己的能力，完善自己的人格。"</blockquote><p><strong>突破壁障：</strong></p><p>成功需要坚韧性和忍耐力。稻盛先生说：</p><blockquote>"成功之前决不放弃。"</blockquote><p>在通往成功的道路上，总会遇到各种壁障。这些壁障可能是技术上的难题，可能是市场上的竞争，可能是人际关系上的矛盾。只有坚持不懈，才能突破这些壁障。</p><p>稻盛先生在京瓷公司创业初期，遇到了无数的技术难题。但他从不放弃，带领团队日夜攻关，最终一一克服了这些难题。</p><p><strong>一念之差：</strong></p><p>信念的力量是巨大的。稻盛先生说：</p><blockquote>"一念之差，天壤之别。"</blockquote><p>这句话的意思是，成功与失败之间，往往只有一念之差。当我们遇到困难时，如果产生了放弃的念头，那么失败就不可避免了；但如果我们坚定了克服困难的信念，那么成功就有可能了。</p><p>稻盛先生说：</p><blockquote>"在最难熬的时候，往往是成功即将到来的时候。这时候，只要再坚持一下，就能突破壁障，迎来成功。"</blockquote><p><strong>今日感悟：</strong></p><p>努力不是盲目的辛苦，而是有目标的坚持。工作的意义在于实现自我价值，而不仅仅是获得报酬。这提醒我们，要正确看待工作，不要把工作仅仅当作赚钱的手段，而要把它当作提升自己、实现价值的途径。只有这样，我们才能在工作中找到真正的快乐和满足。</p>` },
+  '2026-05-09': { chapter: `第14天（05月09日）：第三章 成功三要素（努力）- 热情开创新时代`, content: `<p><strong>热情开创新时代：</strong></p><h4>继续第三章（努力篇）原文</h4><p>稻盛先生说：</p><blockquote>"热情是开创新事业、新时代的动力源泉。"</blockquote><p>历史证明，所有伟大的事业，都是由充满热情的人开创的。热情可以激发人的创造力，可以让人克服一切困难，可以让人在绝望中看到希望。</p><p>稻盛先生说：</p><blockquote>"没有热情的人，不可能成就大事。热情是成功的第一要素。"</blockquote><p><strong>迷恋工作：</strong></p><p>热爱是成功的起点。稻盛先生说：</p><blockquote>"只有迷恋工作，才能做好工作。"</blockquote><p>所谓迷恋工作，就是对工作充满热爱，全身心投入。当一个人迷恋工作时，他会忘记时间，忘记疲劳，忘记一切困难。这种状态下，人的潜能会被充分激发，创造出平时难以想象的成果。</p><p>稻盛先生说：</p><blockquote>"如果你不喜欢自己的工作，那就试着去喜欢它。只要你全身心投入，你就会逐渐发现工作的乐趣，最终爱上它。"</blockquote><p><strong>精于一业：</strong></p><p>专注才能精深。稻盛先生说：</p><blockquote>"精于一业，触类旁通。"</blockquote><p>这句话的意思是，只有专注于某一领域，深入钻研，才能真正掌握这个领域的精髓。而一旦掌握了某一领域的精髓，对于其他相关领域也就容易理解了。</p><p>稻盛先生本人就是精于一业的典范。他专注于陶瓷技术，最终成为了这一领域的专家，并创立了京瓷公司。</p><p><strong>自辟蹊径：</strong></p><p>在困境中寻找转机。稻盛先生说：</p><blockquote>"困境中往往蕴含着机会。"</blockquote><p>当大家都走同一条路时，这条路往往会变得拥挤，竞争也会变得激烈。这时候，如果我们能够另辟蹊径，找到一条新的路，就可能获得意想不到的成功。</p><p>稻盛先生说：</p><blockquote>"当大家都向右转时，你不妨向左转。也许左边就是通往成功的路。"</blockquote><p><strong>今日感悟：</strong></p><p>热情是可以培养的。当我们全身心投入工作时，就会逐渐产生热爱；当我们热爱工作时，就会创造出卓越的成果。这提醒我们，要培养对工作的热情，要精于一业，要敢于自辟蹊径。只有这样，我们才能在激烈的竞争中脱颖而出，取得成功。</p>` },
+  '2026-05-10': { chapter: `第15天（05月10日）：第三章 成功三要素（努力）- 健全精神与反省`, content: `<p><strong>健全的精神寓于健全的肉体：</strong></p><h4>继续第三章（努力篇）原文</h4><p>稻盛先生说：</p><blockquote>"身体健康是努力的基础。"</blockquote><p>没有健康的身体，就无法持续努力。稻盛先生非常重视身体健康，他本人就是一位热爱运动的人。他认为，只有身体健康，才能保持充沛的精力，才能在工作中发挥最佳状态。</p><p>稻盛先生说：</p><blockquote>"健全的精神寓于健全的肉体。只有身体健康，精神才能健康。"</blockquote><p><strong>人生须时时反省：</strong></p><p>反省是进步的关键。稻盛先生说：</p><blockquote>"每天反省自己的思想和行为。"</blockquote><p>反省是一种自我检查、自我批评的过程。通过反省，我们可以发现自己的不足，找到改进的方向。稻盛先生每天都会进行反省，他说："反省就像照镜子，可以让我们看清自己的真实面貌。"</p><p>稻盛先生的反省包括以下几个方面：</p><ul><li>今天是否有不当的言行？</li><li>今天是否有自私自利的行为？</li><li>今天是否尽到了最大的努力？</li><li>今天是否对他人表示了感谢？</li></ul><p><strong>读书开阔视野：</strong></p><p>读书是提升自己的重要途径。稻盛先生说：</p><blockquote>"读书可以开阔视野，增长智慧。"</blockquote><p>稻盛先生是一位热爱读书的人。他认为，通过读书，我们可以学习先贤的智慧，可以了解不同的观点，可以开阔自己的视野。</p><p>稻盛先生说：</p><blockquote>"我每天都要读书，即使只有半小时。读书已经成为我生活的一部分。"</blockquote><p><strong>将能量灌注给部下：</strong></p><p>领导人要将正能量传递给团队。稻盛先生说：</p><blockquote>"领导人的热情可以感染整个团队。"</blockquote><p>领导人的状态会影响整个团队的状态。如果领导人充满热情，团队也会充满活力；如果领导人消极怠工，团队也会萎靡不振。</p><p>稻盛先生说：</p><blockquote>"领导人不仅要自己努力，还要将能量灌注给部下，激发团队的潜力。"</blockquote><p><strong>今日感悟：</strong></p><p>努力需要身心的健康作为支撑。同时，努力不是孤军奋战，而是要带动团队一起前进。这提醒我们，要注意身体健康，要每天反省，要持续学习，要激发团队的能量。只有这样，我们才能在努力的道路上走得更远。</p>` },
+  '2026-05-11': { chapter: `第16天（05月11日）：第三章 成功三要素（努力）- 天天努力与问答`, content: `<p><strong>天天努力：</strong></p><h4>继续第三章（努力篇）原文</h4><p>稻盛先生说：</p><blockquote>"过好每一天，就是过好一生。"</blockquote><p>很多人总是想着未来，想着明天，想着以后，却忽视了今天。稻盛先生认为，未来是由今天构成的，只有把今天过好，未来才会好。</p><p>稻盛先生说：</p><blockquote>"不要想着明天再努力，今天就要努力。不要想着明年再开始，现在就要开始。"</blockquote><p><strong>将来的延长线是今天：</strong></p><p>今天的努力决定明天的成就。稻盛先生说：</p><blockquote>"今天的努力是明天成功的基础。"</blockquote><p>很多人希望将来能够成功，但却不愿意在今天付出努力。他们不知道，将来的成功是由今天的努力积累而成的。没有今天的努力，就没有明天的成功。</p><p>稻盛先生说：</p><blockquote>"将来的延长线是今天。今天的努力，决定了明天的位置。"</blockquote><p><strong>项目成功之前决不放弃：</strong></p><p>坚持到最后一刻。稻盛先生说：</p><blockquote>"成功往往就在再坚持一下的努力之中。"</blockquote><p>很多人在离成功只有一步之遥时放弃了，这是非常可惜的。稻盛先生认为，只要再坚持一下，就可能迎来转机，就可能取得成功。</p><p>稻盛先生说：</p><blockquote>"在京瓷的发展过程中，有很多次我都觉得不行了，想放弃了。但每次我都告诉自己，再坚持一下，再努力一下。结果，往往就在这时候，问题得到了解决。"</blockquote><p><strong>潜在能力通过努力变为现实：</strong></p><p>每个人都有无限的潜能。稻盛先生说：</p><blockquote>"努力可以将潜能转化为现实的能力。"</blockquote><p>人的潜能是巨大的，但潜能不会自动转化为能力。只有通过努力，潜能才能被激发，才能转化为现实的能力。</p><p>稻盛先生说：</p><blockquote>"每个人都有无限的潜能，关键在于是否愿意付出努力。"</blockquote><p><strong>今日感悟：</strong></p><p>努力是一种习惯，是一种生活方式。当我们把努力变成日常，成功就会变成必然。这提醒我们，要珍惜每一天，要在每一天都付出努力。不要等待，不要拖延，从现在开始，从今天开始，付出不亚于任何人的努力。</p>` },
+  '2026-05-12': { chapter: `第17天（05月12日）：第三章 成功三要素（思想·人格）- 希望与正道`, content: `<p>成功三要素之三是"思想·人格"。稻盛先生说：</p><h4>第三章（思想·人格篇）原文</h4><p>成功三要素之三是"思想·人格"。这是稻盛成功方程式中最重要的要素，因为它有方向性。如果方向错了，能力和努力越大，危害就越大。</p><p><strong>决不丧失希望：</strong></p><p>稻盛先生说：</p><blockquote>"决不丧失希望，即使在最低潮。"</blockquote><p>稻盛先生刚踏入社会时，做的每件事都不顺利。当时他住在一间破旧宿舍里，公司的研究工作不顺利，人际关系也不和谐。但即使在那种处境之下，他也没有失去希望，没有失去开朗的心境。</p><p>稻盛先生说：</p><blockquote>"我们决不可能完全摆脱痛苦和烦恼，但是，即使处于最低潮，我们仍然可以努力，不失去对明日的希望。"</blockquote><p><strong>追求人间正道：</strong></p><p>稻盛先生年轻时就学会了自问：</p><blockquote>"作为人，何谓正确？"</blockquote><p>面对社会的丑恶现象，稻盛先生会自言自语："不能这样，这不是人应该做的，理想的人不该如此。"他领悟到，一颗追求正确的心，也就是追求理想的心。</p><p>稻盛先生说：</p><blockquote>"在漫长的人生旅途中，会经历多种失败、困难和挫折，但是这一切，同时也是难得的磨炼心志的机会，促使你发愤图强，通过诚实的努力，去实现自己的理想。上苍决不会无视真诚的努力和追求正确的决心。"</blockquote><p><strong>避开"捷径"：</strong></p><p>走正道，不走捷径。稻盛先生说：</p><blockquote>"走安逸之道，大抵都到不了目的地。"</blockquote><p>大学毕业后不久，稻盛先生去京都一家小型陶瓷公司工作。他与公司管理层发生争执，又受到工会的攻击，曾陷入孤立无援的境地。当时，一位上司好心劝他妥协，走一条好走的路。但稻盛先生最终选择走崎岖的路，作垂直攀登。</p><p>稻盛先生说：</p><blockquote>"我知道我是一个脆弱的人，如果选择好走的路，慢慢地爬，在到达山顶之前，恐怕我已经放弃了。"</blockquote><p><strong>信赖关系从自己内心构筑：</strong></p><p>信赖不是向外求，而是向内求。稻盛先生说：</p><blockquote>"信赖应从自己内心而不是从外面求得。"</blockquote><p>缺乏互相信赖的人际关系，就不会有成功。那么，怎样才能构筑互相信赖的人际关系呢？稻盛先生最初想到的是，寻找值得信赖的合作伙伴，从自身之外去寻求信赖关系。然而他错了。</p><p>稻盛先生说：</p><blockquote>"我意识到，如果自己不能成为一个值得别人信赖的人，与别人之间的信赖关系就无法建立。与别人的信赖关系，不过是自己内心的一种外在反映。"</blockquote><p><strong>今日感悟：</strong></p><p>思想·人格是人生的指南针。只有方向正确，努力才有意义；只有心存希望，才能战胜困难。这提醒我们，要时常问自己"作为人，何谓正确"，要走正道，要做一个值得信赖的人。只有这样，我们的人生才能走向正确的方向，才能取得真正的成功。</p>` },
+  '2026-05-13': { chapter: `第18天（05月13日）：第三章 成功三要素——思想·人格（决不丧失希望·追求人间正道）`, content: `<h4>1. 决不丧失希望</h4><p>稻盛先生说：</p><p>我相信：我们心中所想的事物，会由现象呈现出来。</p><p>但是我刚踏入社会时，丝毫没有这种想法。当时我到处碰壁，做的每件事都不顺利。但即使在那种处境之下，我也没有失去希望，没有失去开朗的心境，就靠这一点，成就了今日的我。</p><p>当时我住二楼一间地板翘裂的破旧宿舍，面积不足10平方米，榻榻米也破旧不堪，连席草都露了出来。我搬来煤炉和锅，自己做饭。</p><p>公司的研究工作不顺利，人际关系不和谐。宿舍背后有一条小河，河边有一排樱花树，黄昏时分，我常常独坐河畔，吟唱童谣《故乡》。我的心伤痕累累，隐隐作痛，我不知道怎样缓解这种痛苦，借着放声高歌，打起精神，直唱得有足够勇气投入明天的工作，我才回到宿舍。</p><p>我们决不可能完全摆脱痛苦和烦恼，但是，即使处于最低潮，我们仍然可以努力，不失去对明日的希望。</p><p>稻盛先生告诉我们，即使在人生最低潮、最痛苦的时候，也不要放弃希望。心里想着希望，朝着希望的方向不停地努力，积以时日，希望的事物就会出现，所谓"梦想成真"，就是这个意思，这并非不可能。相反，如果因为事事不顺利，事事不如意，或者因为受到某种意外的打击，就一蹶不振，丧失了希望，不再为实现理想而奋斗；那么你的人生真的会暗淡无光。</p><p>只要心不死，就是不失希望，坚持努力，人生就能时来运转，甚至就地转阴为晴，甚至立竿见影。希望和苦难总会过去，这是成功者共有的特征。这与"积极心态"完全不同。比如理性地看待挫折，把挫折视为好事，承认挫折是心灵成长的机会，那么，你不但能够有效地克服恐惧、烦闷等消极情绪，满怀信心，在正确的方向上坚持不懈，而且在这过程中一定会萌生解决问题的智慧和力量，成功是必然的结果。</p><p>不要只看稻盛先生现在如何成功，如何伟大，他年轻时同我们有一样的苦恼、一样的失意、一样的徘徊。问题是不要陷进去，要解脱出来并朝着希望奋进不息。</p><h4>2. 追求人间正道</h4><p>稻盛先生说：</p><p>我年轻时就学会了自问："作为人，何谓正确？"面对社会的丑恶现象，我会自言自语："不能这样，这不是人应该做的，理想的人不该如此。"我领悟到，一颗追求正确的心，也就是追求理想的心。</p><p>升学考试落榜，就职考试失败，我曾十分沮丧，但并不服输。我鼓励自己：进一所好公司，用最优质的材料，做最优质的研究工作。在奉命开发新产品时，我鼓励自己：一定要用最好的陶瓷材料。</p><p>即使处于近乎绝望的环境，我仍然不失希望，为了实现自己的理想，拼命地、不知疲倦地工作。</p><p>在漫长的人生旅途中，会经历多种失败、困难和挫折，但是这一切，同时也是难得的磨炼心志的机会，促使你发愤图强，通过诚实的努力，去实现自己的理想。上苍决不会无视真诚的努力和追求正确的决心。</p><p>不仅是怀抱希望，而且不论在什么环境中，都要永远追求正确，也就是追求理想，这样才不会迷失人生的方向。上苍会帮助始终不渝的人。</p><p>稻盛先生说："我年轻时就学会了自问：'作为人，何谓正确？'""学会了自问：'作为人，何谓正确？'"这句话太重要了。稻盛先生年轻时已经学会了，所以有后来辉煌的成功。我们现在学会了没有呢？我们往往在这个人生最重要的问题上丧失思考。</p><p>每个人在人生的各个时期都会遭遇困难或问题，其内容自然因人、因时而异，但"会遭遇"则是共性，可以说这是人的宿命。把困难或问题看作机会还是看作倒霉，这才是关键，也就是说，对待问题的态度往往比问题本身更重要。</p><p>我在工作实践中，在学习稻盛哲学过程中，总结出如下"问题观"：问题即机会。问题发生，正是提高解决问题能力的机会，积累解决问题经验的机会，解决与该问题相关的其他问题的机会，防止类似问题或更大问题再发生的机会，加深与当事者信任关系的机会、积聚勇气、磨炼意志的机会。遇到问题和解决问题，是人生意义的精彩所在。</p><p>如果把一切问题、挫折、失败都看成上帝赋予的成长的机会，那么你的心境就会豁然开朗。你这么想、这么做了，就是一种开悟。</p>` },
+  '2026-05-14': { chapter: `第19天（05月14日）：第三章 成功三要素——思想·人格（避开捷径·信赖关系）`, content: `<h4>3. 避开"捷径"</h4><p>稻盛先生说：</p><p>大学毕业后不久，我去京都一家小型陶瓷公司工作。我与公司管理层发生争执，又受到工会的攻击，曾陷入孤立无援的境地。当时，一位上司好心劝我妥协，他举例说：好比一个团队攀登险峻的高山，攀登过程中，有人对陡峭的岩壁产生了畏怯情绪，有人失足跌入悬崖下，于是有人建议绕道走安全的道路，慢慢登上山顶。</p><p>对上司的忠告，我做了认真的思考。但最终我仍选择走崎岖的路，作垂直攀登。我知道我是一个脆弱的人，如果选择好走的路，慢慢地爬，在到达山顶之前，恐怕我已经放弃了。队友们由衷信任我，如果我选择安逸之道，他们会很轻松，但走这样的路，不能到达真正的幸福顶峰。</p><p>坚信自己选择的是正道，不管途中多么危险，不管天气多么恶劣，我下定决心，直线登上顶峰。为了全员一起攀上山顶，我对别人、对自己一样的严厉苛刻。</p><p>走安逸之道，大抵都到不了目的地。</p><p>这上山并不是成功的捷径，想走捷径，就达不到成功。但是，稻盛先生这里所说"选择走崎岖的路"，并不是指与人为敌、主动迎击困难。正义凛然，毫无私心，结果受到某些激进分子的攻击。稻盛先生当车间主任时，对一名吊儿郎当的员工进行严厉批评，第二天，一位出身名门的工会干部就找上门来。</p><p>有些企业或组织里，人际关系复杂，有些干部往往怕得罪人，明知不对，也不敢批评和处理，使不良现象蔓延，这背后无非私心在作怪。他们根本没有坚持正义的勇气。</p><p>稻盛先生正因为自己没有私心，工作时又身先士卒，所以他可以公正理直气壮，无须回避矛盾，不必把事情人为地复杂化。他可以同对自己一样的严厉苛刻。正因为如此，他才能带领团队到达光辉的成功之顶。</p><h4>4. 信赖关系从自己内心构筑</h4><p>稻盛先生说：</p><p>缺乏互相信赖的人际关系，就不会有成功。企业经营尤其如此。那么，怎样才能构筑互相信赖的人际关系呢？我首先想到的是，寻找值得信赖的合作伙伴，就是说从自身之外去寻求信赖关系。</p><p>然而我错了。我意识到，如果自己不能成为一个值得别人信赖的人，与别人之间的信赖关系就无法建立。如果别人觉得你的内心不可靠，即使原来的朋友也会离你而去。与别人的信赖关系，不过是自己内心的一种外在反映。</p><p>我曾多次遭人背叛，即便如此，我仍然认为应该诚心诚意地信赖别人，并且不断自问自答：我自己的心是否值得别人信赖？如果不是，就得马上改正自己的态度和行为。即使自己蒙受损失，也要相信别人，只有这样，才能产生互相信赖的人际关系。</p><p>信赖，应从自己内心而不是从外面求得。</p><p>你内心想什么，你不断向周围发出信号，你值得别人信赖，而你交往的人，会通过你的各种言行，感受到这一点，从而愿意与你交往，甚至追随你。一个主动的过程，"试你可信，别人就愿意与你共事"，你就会因此进步。信赖是一种互动。</p><p>中国明代《菜根谭》中的金玉良言："信人者，人未必尽诚，己则独诚矣；疑人者，人未必皆诈，己则先诈矣。"意思是说，你信任别人，别人未必百分之百"诚"，而你则已经"诚"了；相反，总是猜忌他人，他人未必都"诈"，而你自己已经先"诈"了。虽说"防人之心不可无"，但这段话更深刻，更实用。"宁人负我，我不负人"，我们应有这种气度。</p>` },
+  '2026-05-15': { chapter: `第20天（05月15日）：第三章 成功三要素——思想·人格（如实观察·细节也须注意）`, content: `<h4>5. 如实观察</h4><p>稻盛先生说：</p><p>心纯见真，清澈纯粹的心灵可以看见真相。充满利己的心目中，只呈现复杂的事相、利己的动机，势必模糊问题的焦点。就是说利己主义者不可能坚持"实事求是"。</p><p>我们应该努力保持一颗纯洁的心，才能按照事物本来的面目来观察和认识事物。被利己欲望弄得混浊的心目里，再简单的问题看起来也非常得复杂。</p><p>即使对自己不利，仍然应如实观察和反映真实情况。如果自己有错，就要如实承认。常有这样的事：当开始用纯粹的目光审视事物时，突然会出现非常简单的方法，使问题马上得以解决。但是如果不摆脱私欲的束缚，一味追求自身的快乐或虚荣，你的双眼就被蒙蔽，事物的真相在你面前是模糊一片。</p><p>但是，仅仅看清真理还不够，为了坚持真理，勇气必不可少。</p><p>如实观察事实，即使自我牺牲也要贯彻真理，有这种觉悟，就没有解决不了的问题。</p><p>事实只有一个，但因观察者的视角不同，观察结果往往不同，甚至大相径庭。苏东坡有诗云："横看成岭侧成峰，远近高低各不同。不识庐山真面目，只缘身在此山中。"就是说，我们要正确、全面地认识某一事物，就要从前后、左右、远近、内外各个方面认真调查研究。这才是所谓实事求是的态度，才有可能了解事物的全貌和真相。</p><p>然而，稻盛先生在这里提出了一个更重要的问题，能不能看清事物真相，把握事物的本质，除了"实事求是"之外，还有"心纯见真"这一条。</p><p>因为认识事物的主体是人，是人的心。一个利己心强烈的人，他的心灵是扭曲的，因此，事实真相在他心里也是扭曲的。就是说，他看不到真相。</p><p>孟子曰："明察秋毫之末，而不见舆薪。"为什么见小不见大？因为夹杂私心，怕事实真相对自己不利，就不想看到、听到对自己不利的事实真相，有意无意回避，而不愿正视现实，常常采取"鸵鸟主义"态度，甚至有意掩盖、歪曲和捏造事实。领导人心灵不纯，按他心中扭曲的"真相"做出决策，会给一个组织带来深重的灾难。</p><p>如实反映真相，才能正确判断，归根结底，和领导人的人格密不可分。领导人职位越高，越不可傲慢，始终谦虚，深入现场，实事求是，才能正确判断，做出正确决策。</p><h4>6. 细节也须注意</h4><p>稻盛先生说：</p><p>人真正的能力，在于能否对事情做出正确的判断。</p><p>要做正确判断，首先要明白自己面临的情势。为此需要触及事物本质的、敏锐的观察力，甚至不忽略细节。这种敏锐的观察力源于神经的集中，而这集中力不是一朝一夕所能养成的。</p><p>神经的集中是一种习惯。如果养成习惯，平时连有关细节也予以注意，那么在任何需要的时刻，立即能将精神高度集中。缺乏习惯，要做到集中注意力于一点，就极为困难。</p><p>你或许太忙，无暇养成这种习惯，无暇注意细节，但繁忙却正是养成这习惯的最佳时刻。即使你不关心的事物，你也不妨有意地、努力地予以注意，这就叫"有意图的注意"，或叫"有意注意"。</p><p>要做正确判断，一是持正确的判断基准；二是对状况有深刻了解。我们强调"调查研究"，这当然很重要。但同样的"调查研究"，结论往往有差异，甚至截然相反。这里需要稻盛先生讲的"敏锐的观察力"。而这种观察力又有赖于"有意注意"习惯的养成。知道了这一点，我们就要在平时下功夫培养这种习惯。</p><p>狮子捕兔，却以面对强敌时同样的气势，迅猛出击，全力以赴，显示百兽之王的雄风。人做事也应如此，即使是小事，即使是细节，即使是价值不大或你不太感兴趣的事，即使是你已经熟练的事，即使是你在匆忙中做的事，无论做什么事，既然要做，就要全神贯注，决不分心。比如读书时专心读书，谈话时专心谈话，做事时专心做事，强制自己意识集中，决不心猿意马，切忌魂不附体。</p><p>意识不仅要集中，更要清醒，决不含糊。这好比照相机，如果镜头不干净，或者蒙上了水汽，那么无论照什么，都是模糊一片。如果你缺乏解决问题的明确目的和强烈愿望，被表面现象所迷惑，思维不清、意识不清、心神不定，那么要处理的事情在你面前也是一片模糊，你就抓不住要点，做不好事情。</p><p>在生活、工作中训练，"有意注意"就会习惯化。这样做的结果，会使你的能力有惊人的提高，使你能迅速而正确地对事物做出判断，采取相应的措施，及时处理和解决问题。</p><p>稻盛先生气势如虹同时心细如发。宏观方面，他能做出参与通信事业这样超人的战略决策。微观方面，连每位员工每小时创造的附加值也能算得一清二楚。他说话、办事细微精到，这与他喜欢深思熟虑养成了"有意注意"的习惯有关。</p>` },
+  '2026-05-16': { chapter: `第21天（05月16日）：第三章 成功三要素——思想·人格（调动潜意识·通逻辑合伦理）`, content: `<h4>7. 调动潜意识</h4><p>稻盛先生说：</p><p>人的潜意识中有一种力量，能对复杂事情做出正确迅速的判断。</p><p>记得初学开车时，既要集中注意力操作方向盘，又要注意路况注意对面的来车等。一面驾车，一面留心各种情况，不免又紧张又疲劳。但等你积累了足够的经验后，潜意识就跑出来替代了显意识。潜意识能够即时对状况做出判断，从过去的经验中调出类似的应对模式，手脚动作应对自如，就是说潜意识帮你开车了。</p><p>日本象棋名将升田幸三说过："对局高潮时，制胜的一着，忽然在心中闪过。我在头脑中考虑了几十种下法，慎重地探讨了各种可能性，但结果证明，还是最初直觉的那一着最为正确。"名将在运用显意识做各种分析、考量之前，潜意识早已给了他正确的答案。</p><p>印象强烈的事件以及再三重复的经验，会进入潜意识，储存起来。而这种潜意识会替代显意识，以惊人的速度做出正确的判断。</p><p>认真地重复演练，能培养潜意识快速做出正确抉择。</p><p>弗洛伊德认为，显意识的心理过程只是显露在表面的一些孤立片段，如同海面上的岛屿；潜意识的心理活动则如水下巨大的海床，在人的生活中起决定性作用。</p><p>人的工作深入地想。"想"是得到"灵感"、做出"正确的判断"的前提。但一件事要进入潜意识，必须朝思暮想、苦思冥想。用理性，即显意识，但千思万想，强烈地想、深入地想，事情就会从你的显意识进入潜意识，在梦中或其他某个地方或时候，潜意识就会发挥作用，给你"灵感"，让你一下抓住事物的本质，问题即刻迎刃而解。</p><p>还有一点，潜意识能量巨大，但潜意识里藏的未必全是正确观念。所谓"净化灵魂"，就是要排除潜意识内的错误和消极的观念。潜意识内的观念或叫"观念要素"，对人的思维和行为有重大影响。如果说我们对某个问题的观点是思维的"成品"，那么潜意识内的"观念要素"就是构成这"成品"的"材料"。所谓"观念更新"，形象地说，就是对"心灵的仓库"进行大扫除，让正确的做人原则进入潜意识。这样你就能对许多问题做出正确判断，你就力量无穷，所向无敌，你就能成功。</p><p>为了利用潜意识，首先要进入潜意识。这里再次强调两个要点：一是反复，反复练习，反复思考。这是次数或"量"的概念。二是力度，即每次反复时集中的程度，聚精会神的程度，这是练习及思考的"质"的概念。"量"和"质"高位平衡，就能调动、利用潜意识。而这些只有在工作和生活的实践过程中才能做到。</p><h4>8. 通逻辑、合伦理</h4><p>稻盛先生说：</p><p>英文中说"符合道理"（It makes sense），日文就叫"筋が通ってる"。"筋"的意思就是"线"，就是基准，是人在判断事物时，使用的一系列论据或者哲学，甚至可以说是人的精神指标。</p><p>我们每个人心中，都有各自判断事物的基准。判断基准应该能够答复"作为人，何谓正确？"这一命题，就是说要符合道德、伦理，符合原理原则。判断事情是否"符合道理"，不仅指逻辑上有无矛盾，而且要与做人的准则相对照，确认有无违背。不是随意在头脑里做轻率的判断，而是回到做人最基本的原则，经深思熟虑之后，再进行判断。</p><p>缺少"筋"，就是缺少哲学的人，难于达成有价值的事业，因为他的判断基准中缺乏正确的原理原则。而拥有哲学的人，可以做成许多事业，因为哲学就是引导人们走向正确和成功的指南针。</p><p>内心的哲学指导我们做出正确的决策。</p><p>我们常讥讽某人"脑子缺根筋"，又常说要"心中有杆秤"。按稻盛先生的说法，就是心中具有判断的基准，即哲学。不是心血来潮，不凭个人好恶随意判断。</p><p>许多聪明人或所谓精英，他们崇尚理性，讲究逻辑。但他们的判断基准往往倾向于利害得失。他们不理解，甚至不屑去理解"作为人，何谓正确"这句话的含义，他们的判断基准中缺乏正确而明确的原理原则，因而在重要关头他们常常判断失误，难成大事。</p><p>从实践中找真理，是唯物主义，就是要讲科学，讲逻辑。但又要时时对照做人最基本的原则，这才是正确的唯物主义。有正确判断基准，即有哲学素养的人，他的信念明确而坚定，他的语言简单明了又切中要害，他的决断高瞻远瞩，势如破竹，与众不同。因而他能成大事。</p>` },
+  '2026-05-17': { chapter: `第22天（05月17日）：第三章 成功三要素——思想·人格（根据原理原则）`, content: `<h4>9. 根据原理原则</h4><p>稻盛先生说：</p><p>无论何时都要根据原理原则做出判断，采取行动。</p><p>下判断时，不可照搬老套的智慧和通常的习惯，因为新情况使这些智慧和习惯失灵，照搬就会让你被动。如能坚持依照原理原则做出判断，那么不管在何种情况下，都不会困惑，不会迷失方向。</p><p>所谓依照原理原则，就是以社会的道德、伦理做基准，把做人的正确的准则正确地贯彻始终。依据人间正道进行决断，可超越时空，任何情况下都能被人接受。一个持有正确判断基准的人，即便闯入未知的世界也不会迷惑，不致惊慌失措。</p><p>真正的革新者之所以能够开拓新世界，开创新天地，不是因为他们经验丰富，也不是因为他们常识丰富，而是因为他们理解人之所以崇高的本质所在，因为他们依据基本的原理原则做出判断。</p><p>基本的原理原则似乎抽象，却是超越时代、超越国界的普遍真理，是"放之四海而皆准"的普遍真理。</p><p>我们过去曾相信、现在却怀疑存在"放之四海而皆准"的普遍真理。因为过去强调的所谓"放之四海而皆准"的"普遍真理"，和创造这种"普遍真理"的人，在实践中遭遇到了重大失败。</p><p>但是，稻盛先生以他大企业家的成功经验，以他哲学家的深刻头脑，认真思考的结果告诉人们，这普遍真理确实存在，而且十分简单，无非就是我们平时所讲的做人原则，为人要诚实、正直、谦虚、勤奋、节制、有勇气、平等待人、实事求是、追求正义等。这是人内心的良知，也就是天理，宇宙的真理，或叫作"普遍真理"。</p><p>一个人有两种能力很重要。一是把自己的能力或叫"潜在能力"发挥出来的能力。二是发挥他人能力的能力，就是发挥团队合力，把事情办成的能力。人如果太自以为是，或者太以自我为中心，那么，即使他有能力，也往往很难充分发挥，他的能力常常没有"用武之地"，因为别人不愿或者很难配合他。他的长处被他自己的短处压住了。稻盛先生看重"战胜自己的能力""对事物做出正确判断的能力"，这实际上涉及了"思想·人格"。</p><p>至于充分发挥他人的能力、发挥团队的合力，更要以领导人的公正无私做先决条件。</p><p>另外"努力"或叫"热情"，特别是"不亚于任何人的努力""持续不断的热情"，在很大程度上是高尚的人生哲学、使命感或正确的"思维方式"的产物。</p><p>成就事业需要才智，需要热情，需要精力集中。而人格不正、理念不对，或者说私欲太强的人，他的内心往往伴随一种内疚感甚至罪恶感。这种矛盾心理耗费他的能量、削弱他的才智、消蚀他的热情、分散他的精力、使他陷入痛苦，从而使事业失败。</p><p>从上述分析中可以看出，方程式中的第一要素"思想·人格"对"能力"和"努力"起统率作用。</p>` },
+  '2026-05-18': { chapter: `第23天（05月18日）：第四章 经营十二条（第1-6条）`, content: `<p>经营十二条是稻盛先生对自己的经营实践进行深入思考的产物，它揭示了企业经营的规律。照它办，经营就能成功；违背它，经营难免失败。</p><p>自然科学里有许多揭示自然规律的原理原则，发现并遵循这些原理原则才有了科学技术的进步。那么企业经营有没有必须遵循的、普遍性的原理原则呢？稻盛先生明确地回答了这个问题。稻盛先生说，几十年来我全身心投入了京瓷和KDDI的经营，在这过程中我懂得了存在着使事业获得成功所必需的普遍性的原则，这些原则超越了时代和环境的差异，我把这些原则归结为"经营的原点"十二条。</p><p>稻盛先生说，经营成败取决于经营者的行动。如果经营者认真学习、果断落实这十二条，经营者就会变，变得判若两人。经营者变，公司的干部就跟着变，公司的员工也跟着变。这样只要一年，你的公司就会变成一个高收益、快增长的、了不起的优秀企业。</p><p>在日本、美国、巴西盛和塾的企业家塾生中，因切实执行这十二条，在一两年内迅速成长的企业比比皆是。</p><p>有人讲经营是一门技巧，有人讲经营是一门艺术，这类说法当然都有它的一面之理。但从经营十二条看，经营与经营者的人格、意志、精神力之间的关联性更大。与其说经营是技巧，与其说经营是艺术，不如说经营更是一种哲学，于是"经营哲学"这个说法便应运而生。</p><p>稻盛先生既是企业家又是哲学家，从经营实践到经营哲学，事业持续成功，思想与时俱进。</p><p>经营十二条是稻盛成功方程式在经营实践中的具体化，特别是方程式中的"努力"和"思想·人格"两项要素，在十二条中都有更为切实、更为深入的解析。</p><h4>经营十二条内容：</h4><ol><li><strong>明确事业的目的意义</strong>：——树立光明正大、符合大义名分的、崇高的事业目的。</li></ol><ol><li><strong>设立具体的目标</strong>：——所设目标随时与员工共有。</li></ol><ol><li><strong>心怀强烈的愿望</strong>：——持续怀有渗透到潜意识的强烈的愿望。</li></ol><ol><li><strong>做出不亚于任何人的努力</strong>：——一步一步地、扎扎实实地、坚持不懈地做好具体朴实的工作。</li></ol><ol><li><strong>销售最大化，经费最小化</strong>：——利润无须强求，量入、制出，利润将随之而来。</li></ol>` },
+  '2026-05-19': { chapter: `第24天（05月19日）：第四章 经营十二条（第7-12条）`, content: `<p>以下是经营十二条的后六条，继续深入领会稻盛先生经营哲学的精髓。</p><ol><li><strong>定价即经营</strong>：——定价是经营者的事。找出使客户满意、自己又赚钱的交汇点。</li></ol><ol><li><strong>经营由意志决定</strong>：——经营需要洞穿岩石般的坚强意志。</li></ol><ol><li><strong>燃烧的"斗魂"</strong>：——经营需要昂扬的斗志，其程度不亚于格斗。</li></ol><ol><li><strong>临事有勇</strong>：——不能有卑怯的举止。</li></ol><ol><li><strong>不断创新</strong>：——日复一日，年复一年，不断琢磨，不断改进，精益求精。</li></ol><ol><li><strong>有同情心，诚实待人</strong>：——买卖各方都得利，皆大欢喜。</li></ol><ol><li><strong>抱着梦想和希望</strong>：——保持开朗的心态。</li></ol>` },
+  '2026-05-20': { chapter: `第25天（05月20日）：第五章 六项精进`, content: `<p>稻盛先生论述的这六项精进之间存在着内在的联系。一个有一定能力的人，如果持续"付出了不亚于任何人的努力"，他就会取得某种程度的成功。</p><p>而人一旦成功，就会骄傲起来。这一点简直就是规律，连伟人似乎也免不了。所以紧接着第二项就是"要谦虚，不要骄傲"。稻盛先生在京瓷公司高速发展、事业风生水起的时候，曾连续两年提出"要谦虚，不要骄傲、努力努力再努力"这句口号。</p><p>然而，即使自我告诫"要谦虚，不要骄傲"，人在不知不觉之间还会傲慢起来。所以第三项就是"要每天反省"。这是稻盛先生每天必做的功课。按照稻盛的经验，一个人无论达到了多高的境界，如果忘记了反省，就难免堕落。所以稻盛先生坚持实践每天反省这一条。</p><p>反省的结果，会知道自己并非完人，自己一个人的能力总有限度，所谓孤掌难鸣，事业的成功是靠了众人的努力和协助。所以应该对周围的一切由衷表达感谢。所以第四项是"活着，就要感谢"。既然"活着，就要感谢"，那么活得这么幸福、活得这么有滋有味、有声有色，当然更应该感激不尽。感谢之心哺育人的道德根基。</p><p>感谢之心并不是仅仅停留在口头上，必须落实到行动之中。所以第五项就是"积善行、思利他"。感谢之心自然而然生出报恩之心、利他之心，就是积累善行、帮助他人之心。"积善行、思利他"是人最高贵的行为。</p><p>实践了这五条，烦恼就会大大减少。但人毕竟是烦恼的动物。我们生活在充满矛盾的现实社会之中，我们是血肉之躯，具备本能的欲望，所以我们还是难免烦恼纠结。所以第六项便是"不要有感性的烦恼"。正因为有烦恼，剪不断、理还乱，因此，稻盛先生告诫我们"不要有感性的烦恼"。尽管如此，有时我们仍然难免烦恼。怎么办？付出不亚于任何人的努力吧！让自己没有烦恼的时间和空间。</p><p>这样，六项精进新一轮的循环就开始了。如此周而复始，就是人生最好的修炼。</p><h4>六项精进内容：</h4><ol><li><strong>付出不亚于任何人的努力</strong></li></ol><p>   - 努力是一切生命都在承担的义务</p><p>   - 只要喜欢，再努力也心甘</p><p>   - 认真专注就会产生创意</p><p>   - 拼命工作可以磨炼灵魂</p><p>   - 全力以赴、全神贯注、持之以恒、精益求精</p><p>   - 有闲工夫发牢骚，不如前进一步，哪怕只是一小步</p><ol><li><strong>要谦虚、不要骄傲</strong></li></ol><p>   - 才能是上天所赐，将自己的才能用于为"公"是第一义，用来为"私"是第二义，这是谦虚这一美德的本质所在</p><p>   - "谦受益"是中国古话</p><p>   - 谦虚能唤来好运和幸福</p><p>   - 骄傲招人讨厌，骄傲带来懈怠和失败</p><ol><li><strong>要每天反省</strong></li></ol><p>   - 每天检点自己的思想和行为，直视自我</p><p>   - 是不是自私自利，有没有卑怯的举止</p><p>   - 将动摇不安之心镇定下来，真挚地反省，有错即改</p><ol><li><strong>活着，就要感谢</strong></li></ol><p>   - 滴水之恩，不忘相报</p><p>   - "感谢"二字塑造了我心灵的原型</p><p>   - "感谢之心"像地下水一样，滋润着我道德观的根基</p><p>   - 只要活着，就要感谢</p><ol><li><strong>积善行、思利他</strong></li></ol><p>   - 积善之家必有余庆</p><p>   - 言行之间留意关爱别人</p><p>   - 真正为对方好，才是利他</p><ol><li><strong>不要有感性的烦恼</strong></li></ol><p>   - 不要烦恼，不要焦躁，不要总是忿忿不平</p><p>   - 人生本来就是波澜万丈</p><p>   - 活着就会遭遇各种困难和挫折，绝不能被它们击垮，绝不能逃避</p><p>   - 正面对，垂直攀登，硬着头皮顶住，不忘初衷，努力做好该做的事</p>` },
+  '2026-05-21': { chapter: `第26天（05月21日）：后记`, content: `<p>走进书店，关于"成功"的书籍丰富多彩。但其中大多数，都着眼于能力、手法、技术、技巧、计策、机谋、战略、战术、聪明、机智等，甚至还有教授骗术的，把军事上的"兵不厌诈"，用到经营乃至其他领域。"计"有三十六条之多、"变"有七十二种之杂，仿佛这才是集我们古人智慧之大成。有些从国外翻译过来的成功人士的成功案例，亦常常突出个人手腕的高超。当然也有人论述"诚信"等人格要素的重要性，但多数也只是把它作为成功的重要因素之一列出，而不是把它作为首要的和基础的要素。有人甚至有意无意地把"讲诚信"也作为一种宣传策略，挂在嘴上，自己内心却并不真正认同。在社会上做事，特别是在中国，似乎不说假话就会吃亏，这才是许多人潜意识里的真思想。这种基本观念上的混乱，正是所有社会混乱现象的根源。</p><p>"稻盛的成功方程式"则旗帜鲜明，它把"思想·人格"放在第一位，而且指明它有正负。这个方程式犹如巨大的警钟，应该震撼我们这个追名逐利的社会。</p><p>但是我们宣传这个方程式仍属于"显意识"。在认真学习、深入思考、反复实践的过程中，不断驱动这种"显意识"，它才能进入"潜意识"，并随时返回"显意识"。只有当"显意识"和"潜意识"都由正确观念占据，人才会走进悟境，才有所谓"厚积薄发"。</p><p>写作是一个用文字整理和表达自己思想的过程，对我而言，这还是一个系统和深入学习"稻盛哲学"的过程。较之写之前，写之后我对经营和人生的信念更为明确、更为坚定、更为自觉，自己的工作和生活都有进步，企业也有发展。写这部书虽有绞尽脑汁的艰苦，但我更多地感觉到愉快和充实。</p><p>有位朋友看完这部书稿后说，能够代表当代日本的，不是那些身居高位的日本政治家和官僚，而是在民间，像稻盛和夫先生那样具备高尚品格和哲学睿智的企业家。对此我亦有同感。</p><p>有人认为稻盛先生这一套太高尚，在讲究功利的现实世界里显得鹤立鸡群，所谓"阳春白雪，和者盖寡"。但像"成功方程式"这样深刻又浅显的人生哲学，中学生就能懂，而且随时都能用。记住它，它就可能改变你的人生，用好它，你就会取得成功。</p><p>稻盛先生说："我从不奢望所有的人都能够接受我的哲学，但我一贯坚持自己的经营思想，并证明了它是成功的。"</p><p>因为本书大量译述了稻盛先生的原著和讲话，出自尊重之心，为了慎重起见，本书在付印前，曾由日本盛和塾本部事务局出面，请人译成日文，经日本盛和塾本部事务局，以及京瓷公司秘书室出版小组仔细审阅和修正。</p><p>随后此书的日文版被分为《稻盛和夫的人生方程式》《稻盛和夫的成功方程式》两本书，在日本出版并畅销。</p><p>借本书出版的机会，谨向他们致以衷心的感谢。</p><p># 《稻盛和夫的成功方程式》26天打卡计划完成</p><p><strong>打卡时间：2026年4月26日 - 5月21日</strong></p><p><strong>核心公式：人生·工作的结果 = 思维方式 × 热情 × 能力</strong></p><p>愿每一位读者都能从稻盛哲学中汲取智慧，提升心性，获得成功！</p>` },
+};
+
+// ===== LOGIN =====
+const USER_KEY = 'daosheng_username';
+
+function doLogin() {
+  const input = document.getElementById('loginInput');
+  const name = input.value.trim();
+  if (!name) { input.style.borderColor = '#ff4757'; setTimeout(() => input.style.borderColor = '', 1000); return; }
+  localStorage.setItem(USER_KEY, name);
+  document.getElementById('loginOverlay').classList.remove('active');
+  showGreeting(name);
+  init();
+}
+
+function showGreeting(name) {
+  const el = document.getElementById('userGreeting');
+  document.getElementById('greetText').textContent = `👋 ${name}，你好！欢迎打卡`;
+  el.style.display = 'flex';
+}
+
+function changeName() {
+  document.getElementById('loginInput').value = localStorage.getItem(USER_KEY) || '';
+  document.getElementById('loginOverlay').classList.add('active');
+}
+
+// 支持回车登录
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('loginInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin();
+  });
+  const savedName = localStorage.getItem(USER_KEY);
+  if (savedName) {
+    showGreeting(savedName);
+    init();
+  } else {
+    document.getElementById('loginOverlay').classList.add('active');
+  }
+});
+
+// ===== FONT SIZE =====
+let currentFontSize = parseInt(localStorage.getItem('daosheng_fontsize') || '14');
+
+function applyFontSize() {
+  document.getElementById('todayContent').style.fontSize = currentFontSize + 'px';
+  const modalBody = document.getElementById('modalBody');
+  if (modalBody) modalBody.style.fontSize = currentFontSize + 'px';
+}
+
+function changeFontSize(delta) {
+  currentFontSize = Math.min(22, Math.max(12, currentFontSize + delta));
+  localStorage.setItem('daosheng_fontsize', currentFontSize);
+  applyFontSize();
+}
+
+// ===== RECORDING =====
+let recordTimer = null;
+let recordSeconds = 0;
+let isRecording = false;
+
+function toggleRecord() {
+  const btn = document.getElementById('recordBtn');
+  const status = document.getElementById('recordStatus');
+  const duration = document.getElementById('recordDuration');
+
+  if (!isRecording) {
+    isRecording = true;
+    recordSeconds = 0;
+    btn.classList.add('recording');
+    btn.textContent = '⏹';
+    status.className = 'record-status active';
+    status.textContent = '🔴 正在计时...';
+    recordTimer = setInterval(() => {
+      recordSeconds++;
+      const m = Math.floor(recordSeconds / 60);
+      const s = recordSeconds % 60;
+      duration.textContent = `已读 ${m > 0 ? m + '分' : ''}${s}秒`;
+    }, 1000);
+  } else {
+    isRecording = false;
+    clearInterval(recordTimer);
+    btn.classList.remove('recording');
+    btn.textContent = '🎤';
+    status.className = 'record-status';
+    const m = Math.floor(recordSeconds / 60);
+    const s = recordSeconds % 60;
+    const timeStr = `${m > 0 ? m + '分' : ''}${s}秒`;
+    status.textContent = `✅ 本次朗读：${timeStr}`;
+    duration.textContent = '点击麦克风可重新计时';
+    // 保存朗读时长到今日数据
+    const today = todayStr();
+    const checkins = getCheckins();
+    if (checkins[today] && typeof checkins[today] === 'object') {
+      checkins[today].readTime = timeStr;
+    }
+    saveCheckins(checkins);
+  }
+}
+
+// ===== CONFIG =====
+const START_DATE = '2026-04-26';
+const END_DATE   = '2026-05-21';
+const TOTAL_DAYS = 26;
+const STORAGE_KEY = 'daosheng_checkins_v2';
+
+// ===== UTILITIES =====
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function dateAdd(dateStr, days) {
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setDate(d.getDate() + days);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function getCheckins() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e) { return {}; }
+}
+function saveCheckins(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+function getDayIndex(dateStr) {
+  const start = new Date(START_DATE + 'T00:00:00');
+  const target = new Date(dateStr + 'T00:00:00');
+  return Math.round((target - start) / 86400000) + 1;
+}
+
+// ===== INIT =====
+function init() {
+  renderToday();
+  renderCalendar();
+  renderHistory();
+  updateStats();
+}
+
+// ===== TODAY =====
+function renderToday() {
+  const today = todayStr();
+  const checkins = getCheckins();
+  const data = bookContent[today];
+
+  const badge = document.getElementById('todayBadge');
+  const chapter = document.getElementById('todayChapter');
+  const contentEl = document.getElementById('todayContent');
+  const btn = document.getElementById('checkinBtn');
+  const statusBox = document.getElementById('statusBox');
+
+  if (!data) {
+    // out of range
+    const idx = getDayIndex(today);
+    if (new Date(today) < new Date(START_DATE)) {
+      badge.textContent = '待开始';
+      chapter.textContent = '阅读计划尚未开始';
+      contentEl.innerHTML = '<p>打卡活动将于 <strong>2026年4月26日</strong> 正式开始，请耐心等待！</p>';
+      btn.textContent = '⏳ 尚未开始';
+      btn.disabled = true;
+      statusBox.className = 'status-box not-started';
+      statusBox.textContent = '活动将于 4月26日 开始';
+    } else {
+      badge.textContent = '已结束';
+      chapter.textContent = '26天打卡计划已圆满完成！';
+      contentEl.innerHTML = '<p>🎉 恭喜完成 26 天的阅读打卡之旅！</p>';
+      btn.textContent = '✅ 计划已结束';
+      btn.disabled = true;
+      statusBox.className = 'status-box completed';
+      statusBox.textContent = '26天打卡圆满完成！';
+    }
+    return;
+  }
+
+  const dayIdx = getDayIndex(today);
+  badge.textContent = `第 ${dayIdx} 天`;
+  chapter.textContent = data.chapter;
+  contentEl.innerHTML = data.content;
+  applyFontSize();
+
+  if (checkins[today]) {
+    const record = checkins[today];
+    const timeStr = typeof record === 'object' ? record.time : record;
+    const readTime = typeof record === 'object' ? record.readTime : '';
+    const reflection = typeof record === 'object' ? record.reflection : '';
+
+    btn.textContent = '✅ 今日已打卡';
+    btn.disabled = true;
+    statusBox.className = 'status-box completed';
+
+    // 显示感谢语（方便截图）
+    const userName = localStorage.getItem('daosheng_username') || '';
+    statusBox.innerHTML = `🎉 <b>感谢${userName}完成打卡，再接再厉！</b>`;
+
+    // 恢复感悟
+    if (reflection) {
+      document.getElementById('reflectionInput').value = reflection;
+      document.getElementById('reflectionSaved').style.display = 'block';
+    }
+    document.getElementById('reflectionInput').disabled = true;
+  } else {
+    btn.textContent = '📝 提交打卡';
+    btn.disabled = false;
+    statusBox.className = 'status-box in-progress';
+    statusBox.textContent = '📖 今日内容已解锁，请阅读后打卡';
+    document.getElementById('reflectionInput').disabled = false;
+  }
+}
+
+// ===== CHECK IN =====
+function doCheckIn() {
+  const today = todayStr();
+  const checkins = getCheckins();
+  if (checkins[today]) return;
+
+  const now = new Date();
+  const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+  // 读取感悟
+  const reflection = (document.getElementById('reflectionInput').value || '').trim();
+  // 读取朗读时长
+  const readTimeEl = document.getElementById('recordStatus');
+  const readTime = isRecording ? '' : (readTimeEl.textContent.includes('本次朗读') ? readTimeEl.textContent.replace('✅ ', '') : '');
+
+  checkins[today] = { time: timeStr, reflection, readTime };
+  saveCheckins(checkins);
+
+  document.getElementById('checkinBtn').textContent = '✅ 今日已打卡';
+  document.getElementById('checkinBtn').disabled = true;
+  document.getElementById('statusBox').className = 'status-box completed';
+  // 显示感谢语（方便截图发群）
+  const userName = localStorage.getItem('daosheng_username') || '';
+  document.getElementById('statusBox').innerHTML = `🎉 <b>感谢${userName}完成打卡，再接再厉！</b>`;
+
+  // 显示感悟已保存
+  if (reflection) {
+    const saved = document.getElementById('reflectionSaved');
+    saved.style.display = 'block';
+  }
+
+  // 停止录音计时
+  if (isRecording) toggleRecord();
+
+  renderCalendar();
+  renderHistory();
+  updateStats();
+}
+
+
+// ===== STATS =====
+function updateStats() {
+  const checkins = getCheckins();
+  const today = todayStr();
+  const keys = Object.keys(bookContent);
+
+  const checkedDays = keys.filter(k => checkins[k]).length;
+  document.getElementById('statChecked').textContent = checkedDays;
+  document.getElementById('progressCount').textContent = `${checkedDays} / ${TOTAL_DAYS}`;
+  document.getElementById('progressFill').style.width = `${(checkedDays / TOTAL_DAYS * 100).toFixed(1)}%`;
+
+  // streak
+  let streak = 0;
+  let d = today;
+  while (checkins[d] && bookContent[d]) {
+    streak++;
+    d = dateAdd(d, -1);
+  }
+  document.getElementById('statStreak').textContent = streak;
+
+  // remain
+  const remain = Math.max(0, TOTAL_DAYS - checkedDays);
+  document.getElementById('statRemain').textContent = remain;
+
+  document.getElementById('progressText').textContent = `打卡进度 ${(checkedDays / TOTAL_DAYS * 100).toFixed(0)}%`;
+}
+
+// ===== CALENDAR =====
+function renderCalendar() {
+  const checkins = getCheckins();
+  const today = todayStr();
+  const container = document.getElementById('calendarContainer');
+
+  // Build months April and May 2026
+  const months = [
+    { year: 2026, month: 4, label: '2026年4月' },
+    { year: 2026, month: 5, label: '2026年5月' }
+  ];
+
+  let html = '';
+  const weekDays = ['日','一','二','三','四','五','六'];
+
+  months.forEach(({ year, month, label }) => {
+    const firstDay = new Date(year, month - 1, 1).getDay();
+    const daysInMonth = new Date(year, month, 0).getDate();
+
+    html += `<div style="margin-bottom:20px;">
+      <div style="text-align:center;color:#f5c518;font-size:0.9em;margin-bottom:10px;font-weight:bold;">${label}</div>
+      <div class="calendar-grid">`;
+
+    weekDays.forEach(w => {
+      html += `<div class="cal-header">${w}</div>`;
+    });
+
+    for (let i = 0; i < firstDay; i++) {
+      html += `<div class="cal-day empty"></div>`;
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const inRange = bookContent[dateStr];
+      const isToday = dateStr === today;
+      const isFuture = dateStr > today;
+      const isChecked = checkins[dateStr];
+
+      let cls = 'cal-day';
+      if (!inRange) {
+        cls += isFuture ? ' future' : ' empty';
+      } else if (isChecked) {
+        cls += ' checked';
+      } else if (isToday) {
+        cls += ' today-marker';
+      } else if (isFuture) {
+        cls += ' future';
+      } else {
+        cls += ' available';
+      }
+
+      const onclick = inRange && !isFuture ? `onclick="showDayModal('${dateStr}')"` : '';
+      html += `<div class="${cls}" ${onclick}>${d}</div>`;
+    }
+
+    html += `</div></div>`;
+  });
+
+  container.innerHTML = html;
+}
+
+// ===== HISTORY =====
+function renderHistory() {
+  const checkins = getCheckins();
+  const today = todayStr();
+  const keys = Object.keys(bookContent).sort().reverse();
+  const list = document.getElementById('historyList');
+
+  if (keys.length === 0) {
+    list.innerHTML = '<p style="color:#666;text-align:center;padding:20px;">暂无记录</p>';
+    return;
+  }
+
+  list.innerHTML = keys.map(dateStr => {
+    const data = bookContent[dateStr];
+    const isChecked = checkins[dateStr];
+    const isFuture = dateStr > today;
+    const dayIdx = getDayIndex(dateStr);
+    const dateLabel = dateStr.replace('2026-', '').replace('-', '月') + '日';
+
+    let checkedLabel = '';
+    if (isChecked) {
+      const timeStr = typeof isChecked === 'object' ? isChecked.time : isChecked;
+      const reflection = typeof isChecked === 'object' ? isChecked.reflection : '';
+      const readTime = typeof isChecked === 'object' ? isChecked.readTime : '';
+      checkedLabel = `<div class="h-checked">✅ 已打卡 ${timeStr}${readTime ? ' · ' + readTime : ''}</div>`;
+      if (reflection) checkedLabel += `<div style="font-size:0.78em;color:#aaa;margin-top:4px;">💬 ${reflection.slice(0,40)}${reflection.length>40?'...':''}</div>`;
+    }
+
+    return `<div class="history-item" onclick="showDayModal('${dateStr}')">
+      <div class="h-date">${dateLabel} · 第${dayIdx}天 ${isFuture ? '<span style="color:#555">（未解锁）</span>' : ''}</div>
+      <div class="h-chapter">${data.chapter}</div>
+      ${isChecked ? checkedLabel : (isFuture ? '' : '<div style="font-size:0.75em;color:#666;margin-top:4px;">未打卡</div>')}
+    </div>`;
+  }).join('');
+}
+
+// ===== MODAL =====
+function showDayModal(dateStr) {
+  const data = bookContent[dateStr];
+  if (!data) return;
+  document.getElementById('modalTitle').textContent = data.chapter;
+  document.getElementById('modalBody').innerHTML = data.content;
+  document.getElementById('modalOverlay').classList.add('active');
+}
+function closeModal(e) {
+  if (!e || e.target === document.getElementById('modalOverlay')) {
+    document.getElementById('modalOverlay').classList.remove('active');
+  }
+}
+
+// ===== TABS =====
+function switchTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ===== START =====
+// init() 由登录逻辑控制调用
+
+</script>
+</body>
+</html>
