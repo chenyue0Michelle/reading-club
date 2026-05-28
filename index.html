@@ -944,6 +944,11 @@ document.addEventListener('DOMContentLoaded', () => {
   } else {
     document.getElementById('loginOverlay').classList.add('active');
   }
+  // 提前初始化云SDK（不阻塞页面，后台登录）
+  initCloud().then(r => {
+    if (r) console.log('[Cloud] Ready!');
+    else console.warn('[Cloud] Not ready, will retry on upload');
+  });
 });
 
 // ===== FONT SIZE =====
@@ -968,14 +973,25 @@ const STORAGE_DIR = 'reading-audio/';
 
 async function initCloud() {
   if (app) return app;
+  if (typeof cloudbase === 'undefined') {
+    console.warn('[Cloud] SDK not loaded');
+    return null;
+  }
   try {
     app = cloudbase.init({
-      env: 'yongyao-7gq3jvzrae4b4d01'
+      env: 'yongyao-7gq3jvzrae4b4d01',
+      persistence: 'local'
     });
-    console.log('[Cloud] uniCloud init OK');
+    // 匿名登录（浏览器端访问云资源必须先登录）
+    const auth = app.auth();
+    const loginState = await auth.getLoginState();
+    if (!loginState) {
+      await auth.anonymousAuthProvider().signIn();
+    }
+    console.log('[Cloud] uniCloud init OK + logged in');
     return app;
   } catch(e) {
-    console.warn('[Cloud] init failed:', e.message);
+    console.warn('[Cloud] init failed:', e.message || e);
     return null;
   }
 }
