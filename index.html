@@ -973,50 +973,77 @@ const STORAGE_DIR = 'reading-audio/';
 
 async function initCloud() {
   if (app) return app;
+  // 等待SDK加载（最多等8秒）
+  var maxWait = 8000, waited = 0, interval = 200;
+  while (typeof cloudbase === 'undefined' && waited < maxWait) {
+    await new Promise(r => setTimeout(r, interval));
+    waited += interval;
+  }
   if (typeof cloudbase === 'undefined') {
-    console.warn('[Cloud] SDK not loaded');
+    window._cloudError = '云SDK未加载(请检查网络)';
     return null;
   }
   try {
+    // 第一步：只做初始化，不强制要求登录成功
     app = cloudbase.init({
       env: 'yongyao-7gq3jvzrae4b4d01',
       persistence: 'local'
     });
-    // 匿名登录（浏览器端访问云资源必须先登录）
-    const auth = app.auth();
-    const loginState = await auth.getLoginState();
-    if (!loginState) {
-      await auth.anonymousAuthProvider().signIn();
+    console.log('[Cloud] init OK');
+    
+    // 第二步：尝试匿名登录（失败不阻断，继续返回app）
+    try {
+      var auth = app.auth();
+      var loginState = await auth.getLoginState();
+      if (!loginState) {
+        await auth.anonymousAuthProvider().signIn();
+        console.log('[Cloud] anon login OK');
+      } else {
+        console.log('[Cloud] already logged in');
+      }
+    } catch(authErr) {
+      // 登录失败不阻断！有些云环境允许未登录上传
+      console.warn('[Cloud] auth skipped:', authErr.message || authErr);
+      window._cloudAuthWarning = '未登录(' + (authErr.message || authErr) + ')';
     }
-    console.log('[Cloud] uniCloud init OK + logged in');
+    
     return app;
   } catch(e) {
-    console.warn('[Cloud] init failed:', e.message || e);
+    window._cloudError = '初始化失败(' + (e.message || e) + ')';
     return null;
   }
 }
 
 async function uploadToCloud(blob, fileName) {
   const cloudApp = await initCloud();
-  if (!cloudApp) throw new Error('Cloud not init');
+  if (!cloudApp) throw new Error(window._cloudError || 'Cloud not init');
+  
+  if (window._cloudAuthWarning) {
+    console.warn('[Upload] auth warning:', window._cloudAuthWarning);
+  }
   
   const filePath = STORAGE_DIR + fileName;
-  const arrayBuffer = await blob.arrayBuffer();
-  const base64Data = arrayBufferToBase64(arrayBuffer);
   
   try {
     const result = await cloudApp.storage().uploadFile({
       cloudPath: filePath,
       fileContent: blob,
       onProgress: function(ev) {
-        console.log('[Upload]', ev.loaded/ev.total*100 + '%');
+        console.log('[Upload]', Math.round(ev.loaded/ev.total*100) + '%');
       }
     });
     console.log('[Upload] OK:', result.fileID || result);
     return result.fileID || JSON.stringify(result);
   } catch(e) {
     console.error('[Upload] fail:', e);
-    return null;
+    var detail = e.message || '';
+    if (detail.indexOf('permission') > -1 || detail.indexOf('auth') > -1 || detail.indexOf('login') > -1) {
+      throw new Error('权限不足(需开启匿名登录): ' + detail);
+    }
+    if (detail.indexOf('network') > -1 || detail.indexOf('timeout') > -1 || detail.indexOf('ETIMEDOUT') > -1) {
+      throw new Error('网络超时(手机信号弱?): ' + detail);
+    }
+    throw new Error('上传失败: ' + detail);
   }
 }
 
@@ -1192,7 +1219,8 @@ async function doUploadAudio(dateStr, durationStr) {
   } catch(err) {
     console.error('upload fail:', err);
     statusEl.style.color = '#ff4757';
-    statusEl.textContent = '\u274c \u4e0a\u4f20\u5931\u8d25:' + (err.message || '');
+    var errMsg = window._cloudError || (err.message || '未知错误');
+    statusEl.textContent = '\u274c ' + errMsg;
     areaEl.classList.remove('uploading');
   }
 }
