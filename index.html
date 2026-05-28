@@ -591,12 +591,8 @@
     @keyframes spin { to { transform: rotate(360deg); } }
 
   </style>
-  <!-- uniCloud SDK (多CDN备用) -->
-  <script src="https://unpkg.com/@cloudbase/js-sdk@2/dist/cloudbase.full.js" onerror="
-    var s=document.createElement('script');
-    s.src='https://cdnjs.cloudflare.com/ajax/libs/cloudbase-js/2.8.9/cloudbase.full.min.js';
-    document.head.appendChild(s);
-  "></script>
+  <!-- uniCloud SDK (本地文件，不依赖外部CDN) -->
+  <script src="cloudbase.js"></script>
 </head>
 <body>
 
