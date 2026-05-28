@@ -498,7 +498,101 @@
     }
     .stat-card .num { font-size: 1.6em; font-weight: bold; color: #f5c518; }
     .stat-card .label { font-size: 0.75em; color: #888; margin-top: 4px; }
+    /* ===== AUDIO WALL (录音墙) ===== */
+    .audio-wall-header {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .audio-wall-header h3 {
+      color: #f5c518;
+      font-size: 1em;
+      margin-bottom: 4px;
+    }
+    .audio-wall-header p {
+      font-size: 0.78em;
+      color: #888;
+    }
+    .audio-wall-list { display: flex; flex-direction: column; gap: 10px; }
+    .audio-item {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 14px 16px;
+      transition: all 0.2s;
+    }
+    .audio-item:hover {
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(245,197,24,0.3);
+    }
+    .audio-item-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .audio-item-name { font-weight: bold; color: #f5c518; font-size: 0.9em; }
+    .audio-item-date { font-size: 0.75em; color: #888; }
+    .audio-item-chapter { font-size: 0.82em; color: #aaa; margin-bottom: 10px; }
+    .audio-player-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .audio-player-row audio {
+      flex: 1;
+      height: 36px;
+      border-radius: 8px;
+    }
+    .audio-duration-badge {
+      background: rgba(245,197,24,0.15);
+      color: #f5c518;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.75em;
+      white-space: nowrap;
+    }
+    /* 录音按钮增强 */
+    .record-area.uploading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+    .record-upload-status {
+      font-size: 0.78em;
+      color: #f5c518;
+      margin-top: 4px;
+      display: none;
+    }
+    .record-upload-status.show { display: block; }
+    /* 录音回放 */
+    .record-playback {
+      margin-top: 8px;
+      display: none;
+    }
+    .record-playback.show { display: block; }
+    .record-playback audio {
+      width: 100%;
+      height: 36px;
+      border-radius: 8px;
+    }
+    .record-playback-label {
+      font-size: 0.76em;
+      color: #888;
+      margin-bottom: 4px;
+    }
+    /* loading */
+    .loading-spin {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid rgba(245,197,24,0.3);
+      border-top-color: #f5c518;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
   </style>
+  <!-- uniCloud SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@cloudbase/js-sdk@2/dist/cloudbase.full.js"><\/script>
 </head>
 <body>
 
@@ -551,6 +645,7 @@
     <button class="tab-btn active" onclick="switchTab('today')">📅 今日</button>
     <button class="tab-btn" onclick="switchTab('calendar')">🗓 日历</button>
     <button class="tab-btn" onclick="switchTab('history')">📋 记录</button>
+    <button class="tab-btn" onclick="switchTab('audiowall')">🎙️ 录音墙</button>
   </div>
 
   <!-- TODAY TAB -->
@@ -579,9 +674,14 @@
     <div class="record-area" id="recordArea">
       <button class="record-btn" id="recordBtn" onclick="toggleRecord()">🎤</button>
       <div class="record-info">
-        <div class="record-status" id="recordStatus">点击麦克风开始朗读计时</div>
+        <div class="record-status" id="recordStatus">点击麦克风开始录音朗读</div>
         <div class="record-duration" id="recordDuration"></div>
       </div>
+      <div class="record-upload-status" id="uploadStatus"></div>
+    </div>
+    <div class="record-playback" id="recordPlayback">
+      <div class="record-playback-label">▶️ 回听您的录音：</div>
+      <audio id="recordPlayer" controls></audio>
     </div>
 
     <!-- 感悟输入框 -->
@@ -603,6 +703,17 @@
   <!-- HISTORY TAB -->
   <div class="tab-content" id="tab-history">
     <div class="history-list" id="historyList"></div>
+  </div>
+
+  <!-- AUDIO WALL TAB (录音墙) -->
+  <div class="tab-content" id="tab-audiowall">
+    <div class="audio-wall-header">
+      <h3>🎙️ 读书录音墙</h3>
+      <p>聆听大家的读书声，共同成长进步</p>
+    </div>
+    <div class="audio-wall-list" id="audioWallList">
+      <p style="color:#666;text-align:center;padding:30px;">⏳ 加载中...</p>
+    </div>
   </div>
 
 </div>
@@ -850,10 +961,90 @@ function changeFontSize(delta) {
   applyFontSize();
 }
 
-// ===== RECORDING =====
+// ===== CLOUD STORAGE (uniCloud) =====
+let app = null;
+const DB_COLLECTION = 'reading_records';
+const STORAGE_DIR = 'reading-audio/';
+
+async function initCloud() {
+  if (app) return app;
+  try {
+    app = cloudbase.init({
+      env: 'yongyao-7gq3jvzrae4b4d01'
+    });
+    console.log('[Cloud] uniCloud init OK');
+    return app;
+  } catch(e) {
+    console.warn('[Cloud] init failed:', e.message);
+    return null;
+  }
+}
+
+async function uploadToCloud(blob, fileName) {
+  const cloudApp = await initCloud();
+  if (!cloudApp) throw new Error('Cloud not init');
+  
+  const filePath = STORAGE_DIR + fileName;
+  const arrayBuffer = await blob.arrayBuffer();
+  const base64Data = arrayBufferToBase64(arrayBuffer);
+  
+  try {
+    const result = await cloudApp.storage().uploadFile({
+      cloudPath: filePath,
+      fileContent: blob,
+      onProgress: function(ev) {
+        console.log('[Upload]', ev.loaded/ev.total*100 + '%');
+      }
+    });
+    console.log('[Upload] OK:', result.fileID || result);
+    return result.fileID || JSON.stringify(result);
+  } catch(e) {
+    console.error('[Upload] fail:', e);
+    return null;
+  }
+}
+
+function arrayBufferToBase64(buffer) {
+  let binary = '';
+  const bytes = new Uint8Array(buffer);
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary);
+}
+
+async function saveRecordToDB(record) {
+  const cloudApp = await initCloud();
+  if (!cloudApp) return null;
+  try {
+    const db = cloudApp.database();
+    const res = await db.collection(DB_COLLECTION).add(record);
+    console.log('[DB] saved:', res.id);
+    return res;
+  } catch(e) { console.error('[DB] save fail:', e); return null; }
+}
+
+async function queryAllRecords(limitCount) {
+  const cloudApp = await initCloud();
+  if (!cloudApp) return [];
+  try {
+    const db = cloudApp.database();
+    const res = await db.collection(DB_COLLECTION)
+      .orderBy('createdAt', 'desc')
+      .limit(limitCount || 200)
+      .get();
+    console.log('[DB] found', res.data.length, 'records');
+    return res.data;
+  } catch(e) { console.error('[DB] query fail:', e); return []; }
+}
+
+
+// ===== REAL AUDIO RECORDING =====
+let mediaRecorder = null;
+let recordedChunks = [];
+let mediaStream = null;
 let recordTimer = null;
 let recordSeconds = 0;
 let isRecording = false;
+let currentBlob = null;
 
 function toggleRecord() {
   const btn = document.getElementById('recordBtn');
@@ -861,38 +1052,135 @@ function toggleRecord() {
   const duration = document.getElementById('recordDuration');
 
   if (!isRecording) {
-    isRecording = true;
-    recordSeconds = 0;
-    btn.classList.add('recording');
-    btn.textContent = '⏹';
-    status.className = 'record-status active';
-    status.textContent = '🔴 正在计时...';
-    recordTimer = setInterval(() => {
-      recordSeconds++;
-      const m = Math.floor(recordSeconds / 60);
-      const s = recordSeconds % 60;
-      duration.textContent = `已读 ${m > 0 ? m + '分' : ''}${s}秒`;
-    }, 1000);
+    navigator.mediaDevices.getUserMedia({ 
+      audio: { echoCancellation: true, noiseSuppression: true }
+    }).then(function(stream) {
+      mediaStream = stream;
+      recordedChunks = [];
+      
+      let mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') 
+        ? 'audio/webm;codecs=opus' 
+        : MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : '';
+
+      mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
+
+      mediaRecorder.ondataavailable = function(e) {
+        if (e.data.size > 0) recordedChunks.push(e.data);
+      };
+
+      mediaRecorder.onstop = async function() {
+        currentBlob = new Blob(recordedChunks, { type: mimeType || 'audio/webm' });
+        
+        // 显示回放
+        var player = document.getElementById('recordPlayer');
+        player.src = URL.createObjectURL(currentBlob);
+        document.getElementById('recordPlayback').classList.add('show');
+
+        var m = Math.floor(recordSeconds / 60);
+        var s = recordSeconds % 60;
+        var timeStr = (m > 0 ? m + '分' : '') + s + '秒';
+
+        status.className = 'record-status';
+        status.textContent = '\u2705 \u5f55\u97f3\u5b8c\u6210\uff1a' + timeStr;
+        duration.textContent = '\u6b63\u5728\u4e0a\u4f20\u81f3\u4e91\u7aef...';
+
+        // 保存时长
+        var today = todayStr();
+        var checkins = getCheckins();
+        if (checkins[today] && typeof checkins[today] === 'object') {
+          checkins[today].readTime = timeStr;
+        }
+        saveCheckins(checkins);
+
+        await doUploadAudio(today, timeStr);
+      };
+
+      isRecording = true;
+      recordSeconds = 0;
+      mediaRecorder.start();
+
+      btn.classList.add('recording');
+      btn.textContent = '\u23f9';
+      status.className = 'record-status active';
+      status.textContent = '\ud83d\udd34 \u6b63\u5728\u5f55\u97f3...';
+
+      recordTimer = setInterval(function() {
+        recordSeconds++;
+        var m2 = Math.floor(recordSeconds / 60);
+        var s2 = recordSeconds % 60;
+        duration.textContent = '\u5df2\u5f55 ' + (m2 > 0 ? m2 + '\u5206' : '') + s2 + '\u79d2';
+      }, 1000);
+
+    }).catch(function(err) {
+      console.error('\u65e0\u6cd5\u8bbf\u95ee\u9ea6\u514b\u98ce:', err);
+      status.className = 'record-status active';
+      status.style.color = '#ff4757';
+      status.textContent = '\u274c \u65e0\u6cd5\u8bbf\u95ee\u9ea6\u514b\u98ce';
+    });
+
   } else {
     isRecording = false;
     clearInterval(recordTimer);
-    btn.classList.remove('recording');
-    btn.textContent = '🎤';
-    status.className = 'record-status';
-    const m = Math.floor(recordSeconds / 60);
-    const s = recordSeconds % 60;
-    const timeStr = `${m > 0 ? m + '分' : ''}${s}秒`;
-    status.textContent = `✅ 本次朗读：${timeStr}`;
-    duration.textContent = '点击麦克风可重新计时';
-    // 保存朗读时长到今日数据
-    const today = todayStr();
-    const checkins = getCheckins();
-    if (checkins[today] && typeof checkins[today] === 'object') {
-      checkins[today].readTime = timeStr;
+
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      mediaRecorder.stop();
     }
-    saveCheckins(checkins);
+    if (mediaStream) {
+      mediaStream.getTracks().forEach(function(t) { t.stop(); });
+      mediaStream = null;
+    }
+
+    btn.classList.remove('recording');
+    btn.textContent = '\ud83c\udfa4\u91cd\u65b0\u5f55\u5236';
   }
 }
+
+async function doUploadAudio(dateStr, durationStr) {
+  var statusEl = document.getElementById('uploadStatus');
+  var durationEl = document.getElementById('recordDuration');
+  var areaEl = document.getElementById('recordArea');
+
+  statusEl.classList.add('show');
+  statusEl.innerHTML = '<span class="loading-spin"></span> \u6b63\u5728\u4e0a\u4f20...';
+  areaEl.classList.add('uploading');
+
+  try {
+    if (!currentBlob) { statusEl.textContent = '\u26a0\ufe0f \u65e0\u5f55\u97f3'; areaEl.classList.remove('uploading'); return; }
+
+    var userName = localStorage.getItem(USER_KEY) || '\u533f\u540d';
+    var timestamp = Date.now();
+    var safeName = dateStr + '_' + userName.replace(/[^a-zA-Z\u4e00-\u9fa5]/g, '') + '_' + timestamp;
+
+    var fileId = await uploadToCloud(currentBlob, safeName + '.webm');
+    
+    var dayIdx = getDayIndex(dateStr);
+    var chapterInfo = bookContent[dateStr] || {};
+
+    await saveRecordToDB({
+      userName: userName,
+      date: dateStr,
+      dayIndex: dayIdx,
+      chapter: chapterInfo.chapter || '',
+      duration: durationStr,
+      fileSizeKB: Math.round(currentBlob.size / 1024),
+      fileId: fileId || '',
+      createdAt: new Date()
+    });
+
+    statusEl.style.color = '#2ecc71';
+    statusEl.textContent = '\u2601\ufe0f \u5f55\u97f3\u5df2\u4e0a\u4f20\uff01';
+    durationEl.textContent = '\u5f55\u97f3\u5df2\u4fdd\u5b58\uff0c\u53ef\u968f\u65f6\u56de\u542c\u6216\u53bb\u300c\u5f55\u97f3\u5899\u300d\u6536\u542c';
+
+    setTimeout(function() { areaEl.classList.remove('uploading'); }, 500);
+
+  } catch(err) {
+    console.error('upload fail:', err);
+    statusEl.style.color = '#ff4757';
+    statusEl.textContent = '\u274c \u4e0a\u4f20\u5931\u8d25:' + (err.message || '');
+    areaEl.classList.remove('uploading');
+  }
+}
+
 
 // ===== CONFIG =====
 const START_DATE = '2026-05-22';
@@ -928,6 +1216,8 @@ function init() {
   renderCalendar();
   renderHistory();
   updateStats();
+  // 异步加载录音墙数据（不阻塞主流程）
+  loadAudioWall();
 }
 
 // ===== TODAY =====
@@ -1177,6 +1467,80 @@ function closeModal(e) {
     document.getElementById('modalOverlay').classList.remove('active');
   }
 }
+
+// ===== AUDIO WALL (录音墙) =====
+function loadAudioWall() {
+  const listEl = document.getElementById('audioWallList');
+  if (!listEl) return;
+  
+  // 先显示加载中
+  listEl.innerHTML = '<p style="color:#666;text-align:center;padding:40px;"><span class="loading-spin"></span> 加载录音列表...</p>';
+  
+  // 从云数据库查询
+  queryAllRecords(300).then(records => {
+    if (records.length === 0) {
+      listEl.innerHTML = '<p style="color:#666;text-align:center;padding:40px;">🎵 还没有录音哦~ 快来第一个朗读打卡吧！</p>';
+      return;
+    }
+    
+    // 渲染录音列表
+    let html = '<div style="text-align:right;font-size:0.75em;color:#555;margin-bottom:8px;">共 ' + records.length + ' 条录音</div>';
+    
+    records.forEach((r, idx) => {
+      const fileUrl = r.fileId || '';
+      const dateLabel = (r.date || '').replace('2026-', '').replace('-', '/') + '日';
+      const displayName = r.userName || '匿名';
+      const chapterTitle = r.chapter || `第${r.dayIndex || '?'}天`;
+      
+      // 音频播放器
+      let audioHtml = '';
+      if (fileUrl.startsWith('http')) {
+        audioHtml = `<audio controls preload="none" src="${fileUrl}" style="width:100%;height:34px;border-radius:8px;"></audio>`;
+      } else if (fileUrl) {
+        // 尝试获取临时下载链接
+        audioHtml = `<audio controls preload="none" data-fileid="${fileUrl}" 
+          onplay="if(!this.src){getFileUrl('${fileId}').then(u=>{if(u)this.src=u})}"
+          style="width:100%;height:34px;border-radius:8px;"></audio>`;
+      } else {
+        audioHtml = '<span style="font-size:0.78em;color:#666;">音频文件不可用</span>';
+      }
+      
+      html += `<div class="audio-item" style="animation:fadeInUp 0.3s ease ${idx * 0.03}s both;">
+        <div class="audio-item-top">
+          <span class="audio-item-name">🎤 ${escapeHtml(displayName)}</span>
+          <span class="audio-item-date">${dateLabel}</span>
+        </div>
+        <div class="audio-item-chapter">${escapeHtml(chapterTitle)}</div>
+        <div class="audio-player-row">
+          ${audioHtml}
+          <span class="audio-duration-badge">${r.duration || ''}</span>
+        </div>
+      </div>`;
+    });
+    
+    // 添加淡入动画CSS（仅一次）
+    if (!document.getElementById('awAnimStyle')) {
+      const style = document.createElement('style');
+      style.id = 'awAnimStyle';
+      style.textContent = '@keyframes fadeInUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}';
+      document.head.appendChild(style);
+    }
+    
+    listEl.innerHTML = '<div class="audio-wall-list">' + html + '</div>';
+  }).catch(err => {
+    console.error('[AudioWall] 加载失败:', err);
+    listEl.innerHTML = '<p style="color:#ff4757;text-align:center;padding:40px;">⚠️ 加载失败，请刷新重试</p>';
+  });
+}
+
+// 当切换到录音墙 tab 时刷新
+const _origSwitchTab = undefined;
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
 
 // ===== TABS =====
 function switchTab(tab) {
