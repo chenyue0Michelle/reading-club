@@ -1017,38 +1017,43 @@ async function initCloud() {
 async function uploadToCloud(blob, fileName) {
   const cloudApp = await initCloud();
   if (!cloudApp) throw new Error(window._cloudError || 'Cloud not init');
-  
+
   if (window._cloudAuthWarning) {
     console.warn('[Upload] auth warning:', window._cloudAuthWarning);
   }
-  
+
   const filePath = STORAGE_DIR + fileName;
-  
+  var timeoutMs = 30000; // 30秒超时保护
+
   try {
-    // 使用 cloudApp.uploadFile() 直接上传（v2 SDK API）
+    // CloudBase JS SDK v2: uploadFile() 返回 Promise，不用回调！
+    console.log('[Upload] start:', fileName, 'size:', Math.round(blob.size / 1024), 'KB');
     const result = await new Promise(function(resolve, reject) {
+      // 超时保护：30秒后强制返回
+      var timer = setTimeout(function() { reject(new Error('上传超时(>30s)，请重试')); }, timeoutMs);
       cloudApp.uploadFile({
         cloudPath: filePath,
         fileContent: blob,
         onProgress: function(ev) {
-          console.log('[Upload]', Math.round(ev.loaded/ev.total*100) + '%');
-        },
-        success: function(res) {
-          console.log('[Upload] OK:', res);
-          resolve(res);
-        },
-        fail: function(err) {
-          console.error('[Upload] fail:', err);
-          reject(err);
+          var pct = ev.total ? Math.round(ev.loaded / ev.total * 100) : '?';
+          console.log('[Upload]', pct + '%');
         }
+      }).then(function(res) {
+        clearTimeout(timer);
+        console.log('[Upload] OK:', res);
+        resolve(res);
+      }).catch(function(err) {
+        clearTimeout(timer);
+        console.error('[Upload] reject:', err);
+        reject(err);
       });
     });
-    return result.fileID || JSON.stringify(result);
+    return result.fileID || (result.requestId || 'ok');
   } catch(e) {
     var detail = e.message || e.errMsg || '';
-    console.error('[Upload] fail:', detail);
+    console.error('[Upload] catch:', detail);
     if (detail.indexOf('permission') > -1 || detail.indexOf('auth') > -1 || detail.indexOf('login') > -1) {
-      throw new Error('权限不足(需开启匿名登录): ' + detail);
+      throw new Error('权限不足: ' + detail);
     }
     if (detail.indexOf('network') > -1 || detail.indexOf('timeout') > -1 || detail.indexOf('ETIMEDOUT') > -1) {
       throw new Error('网络超时(手机信号弱?): ' + detail);
