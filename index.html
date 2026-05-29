@@ -1025,18 +1025,28 @@ async function uploadToCloud(blob, fileName) {
   const filePath = STORAGE_DIR + fileName;
   
   try {
-    const result = await cloudApp.storage().uploadFile({
-      cloudPath: filePath,
-      fileContent: blob,
-      onProgress: function(ev) {
-        console.log('[Upload]', Math.round(ev.loaded/ev.total*100) + '%');
-      }
+    // 使用 cloudApp.uploadFile() 直接上传（v2 SDK API）
+    const result = await new Promise(function(resolve, reject) {
+      cloudApp.uploadFile({
+        cloudPath: filePath,
+        fileContent: blob,
+        onProgress: function(ev) {
+          console.log('[Upload]', Math.round(ev.loaded/ev.total*100) + '%');
+        },
+        success: function(res) {
+          console.log('[Upload] OK:', res);
+          resolve(res);
+        },
+        fail: function(err) {
+          console.error('[Upload] fail:', err);
+          reject(err);
+        }
+      });
     });
-    console.log('[Upload] OK:', result.fileID || result);
     return result.fileID || JSON.stringify(result);
   } catch(e) {
-    console.error('[Upload] fail:', e);
-    var detail = e.message || '';
+    var detail = e.message || e.errMsg || '';
+    console.error('[Upload] fail:', detail);
     if (detail.indexOf('permission') > -1 || detail.indexOf('auth') > -1 || detail.indexOf('login') > -1) {
       throw new Error('权限不足(需开启匿名登录): ' + detail);
     }
