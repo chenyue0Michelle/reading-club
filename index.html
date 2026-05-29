@@ -1014,29 +1014,54 @@ async function initCloud() {
   }
 }
 
-// ===== 方案E: SM.MS 国内文件托管（速度快，支持跨域） =====
-var UPLOAD_API = 'https://sm.ms/api/v2/upload';
+// ===== 方案F: GitHub 仓库存储录音（最可靠，无跨域问题） =====
+var GITHUB_TOKEN = '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';
+var GITHUB_REPO = 'chenyue0michelle/reading-club';
+var GITHUB_BRANCH = 'main';
+var GITHUB_API = 'https://api.github.com/repos/' + GITHUB_REPO + '/contents/recordings';
 
 async function uploadToCloud(blob, fileName) {
   var timeoutMs = 60000;
   console.log('[Upload] start:', fileName, 'size:', Math.round(blob.size / 1024), 'KB');
 
-  try {
-    var formData = new FormData();
-    formData.append('smfile', blob, fileName);
-    formData.append('format', 'json');
+  // 转base64
+  var reader = new FileReader();
+  var base64Data = await new Promise(function(resolve) {
+    reader.onloadend = function() {
+      // 去掉 data:audio/webm;base64, 前缀
+      var b64 = reader.result.split(',')[1];
+      resolve(b64);
+    };
+    reader.readAsDataURL(blob);
+  });
 
+  try {
+    var apiUrl = GITHUB_API + '/' + fileName;
     var result = await new Promise(function(resolve, reject) {
       var timer = setTimeout(function() { reject(new Error('上传超时(>60s)，请重试')); }, timeoutMs);
-      fetch(UPLOAD_API, { method: 'POST', body: formData })
+
+      fetch(apiUrl, {
+        method: 'PUT',
+        headers: {
+          'Authorization': 'token ' + GITHUB_TOKEN,
+          'Accept': 'application/vnd.github.v3+json'
+        },
+        body: JSON.stringify({
+          message: '上传录音: ' + fileName,
+          content: base64Data,
+          branch: GITHUB_BRANCH
+        })
+      })
         .then(function(res) { return res.json(); })
         .then(function(json) {
           clearTimeout(timer);
-          console.log('[Upload] response:', JSON.stringify(json).substring(0, 200));
-          if (json.success && json.data && json.data.url) {
-            resolve(json.data.url);
+          console.log('[Upload] OK:', json.content && json.content.html_url || JSON.stringify(json).substring(0, 100));
+          if (json.content && json.content.download_url) {
+            resolve(json.content.download_url);
+          } else if (json.message) {
+            throw new Error(json.message);
           } else {
-            reject(new Error((json.message || json.msg || '未知错误')));
+            resolve(JSON.stringify(json));
           }
         })
         .catch(function(err) {
