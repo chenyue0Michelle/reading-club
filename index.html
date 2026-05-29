@@ -1014,28 +1014,30 @@ async function initCloud() {
   }
 }
 
-// ===== 方案D: 0x0.st 文件托管（国内可用，无需认证） =====
-var UPLOAD_API = 'https://0x0.st';
+// ===== 方案E: SM.MS 国内文件托管（速度快，支持跨域） =====
+var UPLOAD_API = 'https://sm.ms/api/v2/upload';
 
 async function uploadToCloud(blob, fileName) {
-  var timeoutMs = 60000; // 60秒超时
+  var timeoutMs = 60000;
   console.log('[Upload] start:', fileName, 'size:', Math.round(blob.size / 1024), 'KB');
 
   try {
     var formData = new FormData();
-    formData.append('file', blob, fileName);
+    formData.append('smfile', blob, fileName);
+    formData.append('format', 'json');
 
     var result = await new Promise(function(resolve, reject) {
       var timer = setTimeout(function() { reject(new Error('上传超时(>60s)，请重试')); }, timeoutMs);
       fetch(UPLOAD_API, { method: 'POST', body: formData })
-        .then(function(res) {
-          if (!res.ok) throw new Error('HTTP ' + res.status);
-          return res.text();
-        })
-        .then(function(text) {
+        .then(function(res) { return res.json(); })
+        .then(function(json) {
           clearTimeout(timer);
-          console.log('[Upload] OK:', text);
-          resolve(text.trim());
+          console.log('[Upload] response:', JSON.stringify(json).substring(0, 200));
+          if (json.success && json.data && json.data.url) {
+            resolve(json.data.url);
+          } else {
+            reject(new Error((json.message || json.msg || '未知错误')));
+          }
         })
         .catch(function(err) {
           clearTimeout(timer);
@@ -1043,10 +1045,7 @@ async function uploadToCloud(blob, fileName) {
         });
     });
 
-    // 返回文件 URL
-    if (result.indexOf('http') === 0) return result;
-    if (result.indexOf('https') === 0) return result;
-    throw new Error('返回异常: ' + result.substring(0, 80));
+    return result;
   } catch(e) {
     var detail = e.message || e || '';
     console.error('[Upload] catch:', detail);
