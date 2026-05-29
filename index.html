@@ -1014,22 +1014,24 @@ async function initCloud() {
   }
 }
 
-// ===== 方案C: Catbox 免费文件托管（无需SDK/Token/云函数） =====
-var UPLOAD_API = 'https://catbox.moe/user/api.php';
+// ===== 方案D: 0x0.st 文件托管（国内可用，无需认证） =====
+var UPLOAD_API = 'https://0x0.st';
 
 async function uploadToCloud(blob, fileName) {
-  var timeoutMs = 30000;
+  var timeoutMs = 60000; // 60秒超时
   console.log('[Upload] start:', fileName, 'size:', Math.round(blob.size / 1024), 'KB');
 
   try {
     var formData = new FormData();
-    formData.append('reqtype', 'fileupload');
-    formData.append('fileToUpload', blob, fileName);
+    formData.append('file', blob, fileName);
 
     var result = await new Promise(function(resolve, reject) {
-      var timer = setTimeout(function() { reject(new Error('上传超时(>30s)，请重试')); }, timeoutMs);
+      var timer = setTimeout(function() { reject(new Error('上传超时(>60s)，请重试')); }, timeoutMs);
       fetch(UPLOAD_API, { method: 'POST', body: formData })
-        .then(function(res) { return res.text(); })
+        .then(function(res) {
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          return res.text();
+        })
         .then(function(text) {
           clearTimeout(timer);
           console.log('[Upload] OK:', text);
@@ -1041,16 +1043,13 @@ async function uploadToCloud(blob, fileName) {
         });
     });
 
-    // Catbox 返回的就是文件的 URL
+    // 返回文件 URL
     if (result.indexOf('http') === 0) return result;
     if (result.indexOf('https') === 0) return result;
-    throw new Error('返回异常: ' + result.substring(0, 50));
+    throw new Error('返回异常: ' + result.substring(0, 80));
   } catch(e) {
     var detail = e.message || e || '';
     console.error('[Upload] catch:', detail);
-    if (detail.indexOf('network') > -1 || detail.indexOf('timeout') > -1 || detail.indexOf('ETIMEDOUT') > -1 || detail.indexOf('Failed') > -1) {
-      throw new Error('网络超时，请检查手机信号后重试');
-    }
     throw new Error('上传失败: ' + detail);
   }
 }
