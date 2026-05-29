@@ -1014,49 +1014,42 @@ async function initCloud() {
   }
 }
 
+// ===== 方案C: Catbox 免费文件托管（无需SDK/Token/云函数） =====
+var UPLOAD_API = 'https://catbox.moe/user/api.php';
+
 async function uploadToCloud(blob, fileName) {
-  const cloudApp = await initCloud();
-  if (!cloudApp) throw new Error(window._cloudError || 'Cloud not init');
-
-  if (window._cloudAuthWarning) {
-    console.warn('[Upload] auth warning:', window._cloudAuthWarning);
-  }
-
-  const filePath = STORAGE_DIR + fileName;
-  var timeoutMs = 30000; // 30秒超时保护
+  var timeoutMs = 30000;
+  console.log('[Upload] start:', fileName, 'size:', Math.round(blob.size / 1024), 'KB');
 
   try {
-    // CloudBase JS SDK v2: uploadFile() 返回 Promise，不用回调！
-    console.log('[Upload] start:', fileName, 'size:', Math.round(blob.size / 1024), 'KB');
-    const result = await new Promise(function(resolve, reject) {
-      // 超时保护：30秒后强制返回
+    var formData = new FormData();
+    formData.append('reqtype', 'fileupload');
+    formData.append('fileToUpload', blob, fileName);
+
+    var result = await new Promise(function(resolve, reject) {
       var timer = setTimeout(function() { reject(new Error('上传超时(>30s)，请重试')); }, timeoutMs);
-      cloudApp.uploadFile({
-        cloudPath: filePath,
-        fileContent: blob,
-        onProgress: function(ev) {
-          var pct = ev.total ? Math.round(ev.loaded / ev.total * 100) : '?';
-          console.log('[Upload]', pct + '%');
-        }
-      }).then(function(res) {
-        clearTimeout(timer);
-        console.log('[Upload] OK:', res);
-        resolve(res);
-      }).catch(function(err) {
-        clearTimeout(timer);
-        console.error('[Upload] reject:', err);
-        reject(err);
-      });
+      fetch(UPLOAD_API, { method: 'POST', body: formData })
+        .then(function(res) { return res.text(); })
+        .then(function(text) {
+          clearTimeout(timer);
+          console.log('[Upload] OK:', text);
+          resolve(text.trim());
+        })
+        .catch(function(err) {
+          clearTimeout(timer);
+          reject(err);
+        });
     });
-    return result.fileID || (result.requestId || 'ok');
+
+    // Catbox 返回的就是文件的 URL
+    if (result.indexOf('http') === 0) return result;
+    if (result.indexOf('https') === 0) return result;
+    throw new Error('返回异常: ' + result.substring(0, 50));
   } catch(e) {
-    var detail = e.message || e.errMsg || '';
+    var detail = e.message || e || '';
     console.error('[Upload] catch:', detail);
-    if (detail.indexOf('permission') > -1 || detail.indexOf('auth') > -1 || detail.indexOf('login') > -1) {
-      throw new Error('权限不足: ' + detail);
-    }
-    if (detail.indexOf('network') > -1 || detail.indexOf('timeout') > -1 || detail.indexOf('ETIMEDOUT') > -1) {
-      throw new Error('网络超时(手机信号弱?): ' + detail);
+    if (detail.indexOf('network') > -1 || detail.indexOf('timeout') > -1 || detail.indexOf('ETIMEDOUT') > -1 || detail.indexOf('Failed') > -1) {
+      throw new Error('网络超时，请检查手机信号后重试');
     }
     throw new Error('上传失败: ' + detail);
   }
