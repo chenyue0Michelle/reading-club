@@ -593,6 +593,7 @@
   </style>
   <!-- uniCloud SDK (本地文件，不依赖外部CDN) -->
   <script src="cloudbase.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/cos-js-sdk-v5/dist/cos-js-sdk-v5.min.js"></script>
 </head>
 <body>
 
@@ -1014,60 +1015,52 @@ async function initCloud() {
   }
 }
 
-// ===== 方案F: GitHub 仓库存储录音（最可靠，无跨域问题） =====
-var GITHUB_TOKEN = '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';
-var GITHUB_REPO = 'chenyue0michelle/reading-club';
-var GITHUB_BRANCH = 'main';
-var GITHUB_API = 'https://api.github.com/repos/' + GITHUB_REPO + '/contents/recordings';
+// ===== 方案H: 腾讯云COS上传录音（国内可用、稳定、免费额度充足） =====
+// Bucket: reading-club-audio-1423050442  Region: ap-guangzhou
+
+var COS_CONFIG = {
+  SecretId: 'AKIDd8SXVIs7B1cx43oLdhYCbnqfJl01nMgn',
+  SecretKey: 'ua3JL8h2Z1PbQ4TdZFgIfnrnskOo391f',
+  Bucket: 'reading-club-audio-1423050442',
+  Region: 'ap-guangzhou'
+};
 
 async function uploadToCloud(blob, fileName) {
-  var timeoutMs = 60000;
+  var timeoutMs = 30000;
   console.log('[Upload] start:', fileName, 'size:', Math.round(blob.size / 1024), 'KB');
 
-  // 转base64
-  var reader = new FileReader();
-  var base64Data = await new Promise(function(resolve) {
-    reader.onloadend = function() {
-      // 去掉 data:audio/webm;base64, 前缀
-      var b64 = reader.result.split(',')[1];
-      resolve(b64);
-    };
-    reader.readAsDataURL(blob);
-  });
-
   try {
-    var apiUrl = GITHUB_API + '/' + fileName;
     var result = await new Promise(function(resolve, reject) {
-      var timer = setTimeout(function() { reject(new Error('上传超时(>60s)，请重试')); }, timeoutMs);
+      var timer = setTimeout(function() { reject(new Error('上传超时(>30s)，请检查网络后重试')); }, timeoutMs);
 
-      fetch(apiUrl, {
-        method: 'PUT',
-        headers: {
-          'Authorization': 'token ' + GITHUB_TOKEN,
-          'Accept': 'application/vnd.github.v3+json'
-        },
-        body: JSON.stringify({
-          message: '上传录音: ' + fileName,
-          content: base64Data,
-          branch: GITHUB_BRANCH
-        })
-      })
-        .then(function(res) { return res.json(); })
-        .then(function(json) {
-          clearTimeout(timer);
-          console.log('[Upload] OK:', json.content && json.content.html_url || JSON.stringify(json).substring(0, 100));
-          if (json.content && json.content.download_url) {
-            resolve(json.content.download_url);
-          } else if (json.message) {
-            throw new Error(json.message);
-          } else {
-            resolve(JSON.stringify(json));
-          }
-        })
-        .catch(function(err) {
-          clearTimeout(timer);
-          reject(err);
-        });
+      var cos = new COS({
+        getAuthorization: function(options, callback) {
+          callback({
+            TmpSecretId: COS_CONFIG.SecretId,
+            TmpSecretKey: COS_CONFIG.SecretKey,
+            SecurityToken: '',
+            ExpiredTime: Date.now() + 3600000
+          });
+        }
+      });
+
+      cos.putObject({
+        Bucket: COS_CONFIG.Bucket,
+        Region: COS_CONFIG.Region,
+        Key: 'recordings/' + fileName,
+        Body: blob,
+        onProgress: function(info) { console.log('[Upload] progress:', Math.round(info.percent) + '%'); }
+      }, function(err, data) {
+        clearTimeout(timer);
+        if (err) {
+          console.error('[Upload] error:', err);
+          reject(new Error('上传失败: ' + (err.error || JSON.stringify(err).substring(0, 100))));
+        } else {
+          var url = 'https://' + COS_CONFIG.Bucket + '.cos.' + COS_CONFIG.Region + '.myqcloud.com/recordings/' + fileName;
+          console.log('[Upload] OK:', url);
+          resolve(url);
+        }
+      });
     });
 
     return result;
@@ -1076,6 +1069,7 @@ async function uploadToCloud(blob, fileName) {
     console.error('[Upload] catch:', detail);
     throw new Error('上传失败: ' + detail);
   }
+}
 }
 
 function arrayBufferToBase64(buffer) {
