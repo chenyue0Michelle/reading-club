@@ -1010,7 +1010,7 @@ async function initCloud() {
     
     return app;
   } catch(e) {
-    window._cloudError = '初始化失败(' + (e.message || e) + ')';
+    window._cloudError = '初始化失败(' + (e.message || (typeof e === 'string' ? e : JSON.stringify(e).substring(0,80))) + ')';
     return null;
   }
 }
@@ -1029,46 +1029,59 @@ async function uploadToCloud(blob, fileName) {
   var timeoutMs = 30000;
   console.log('[Upload] start:', fileName, 'size:', Math.round(blob.size / 1024), 'KB');
 
+  // 检查COS SDK是否已加载
+  if (typeof COS === 'undefined') {
+    throw new Error('COS SDK未加载，请刷新页面后重试');
+  }
+
   try {
     var result = await new Promise(function(resolve, reject) {
       var timer = setTimeout(function() { reject(new Error('上传超时(>30s)，请检查网络后重试')); }, timeoutMs);
 
-      var cos = new COS({
-        getAuthorization: function(options, callback) {
-          callback({
-            TmpSecretId: COS_CONFIG.SecretId,
-            TmpSecretKey: COS_CONFIG.SecretKey,
-            SecurityToken: '',
-            ExpiredTime: Date.now() + 3600000
-          });
-        }
-      });
+      try {
+        var cos = new COS({
+          getAuthorization: function(options, callback) {
+            callback({
+              TmpSecretId: COS_CONFIG.SecretId,
+              TmpSecretKey: COS_CONFIG.SecretKey,
+              SecurityToken: '',
+              ExpiredTime: Date.now() + 3600000
+            });
+          }
+        });
 
-      cos.putObject({
-        Bucket: COS_CONFIG.Bucket,
-        Region: COS_CONFIG.Region,
-        Key: 'recordings/' + fileName,
-        Body: blob,
-        onProgress: function(info) { console.log('[Upload] progress:', Math.round(info.percent) + '%'); }
-      }, function(err, data) {
+        cos.putObject({
+          Bucket: COS_CONFIG.Bucket,
+          Region: COS_CONFIG.Region,
+          Key: 'recordings/' + fileName,
+          Body: blob,
+          onProgress: function(info) { console.log('[Upload] progress:', Math.round(info.percent) + '%'); }
+        }, function(err, data) {
+          clearTimeout(timer);
+          if (err) {
+            console.error('[Upload] cos-error:', JSON.stringify(err));
+            var errMsg = (err.error && typeof err.error === 'string') ? err.error :
+                         (err.message && typeof err.message === 'string') ? err.message :
+                         JSON.stringify(err).substring(0, 200);
+            reject(new Error('COS错误: ' + errMsg));
+          } else {
+            var url = 'https://' + COS_CONFIG.Bucket + '.cos.' + COS_CONFIG.Region + '.myqcloud.com/recordings/' + fileName;
+            console.log('[Upload] OK:', url);
+            resolve(url);
+          }
+        });
+      } catch(cosErr) {
         clearTimeout(timer);
-        if (err) {
-          console.error('[Upload] error:', JSON.stringify(err));
-          var errMsg = err.error || err.message || err.code || JSON.stringify(err).substring(0, 150);
-          reject(new Error('上传失败: ' + errMsg));
-        } else {
-          var url = 'https://' + COS_CONFIG.Bucket + '.cos.' + COS_CONFIG.Region + '.myqcloud.com/recordings/' + fileName;
-          console.log('[Upload] OK:', url);
-          resolve(url);
-        }
-      });
+        console.error('[Upload] init-error:', cosErr);
+        reject(new Error('COS初始化失败: ' + (cosErr.message || String(cosErr))));
+      }
     });
 
     return result;
   } catch(e) {
-    var detail = e.message || e || '';
+    var detail = e && e.message ? e.message : String(e || '未知错误');
     console.error('[Upload] catch:', detail);
-    throw new Error('上传失败: ' + detail);
+    throw new Error(detail);
   }
 }
 
@@ -1244,7 +1257,10 @@ async function doUploadAudio(dateStr, durationStr) {
   } catch(err) {
     console.error('upload fail:', err);
     statusEl.style.color = '#ff4757';
-    var errMsg = window._cloudError || (err.message || '未知错误');
+    var rawMsg = window._cloudError || (err && err.message) || '';
+    var errMsg = (typeof rawMsg === 'string') ? rawMsg : JSON.stringify(rawMsg).substring(0, 150);
+    // 防止 [object Object] 泄漏
+    if (errMsg.indexOf('object Object') >= 0) { errMsg = '上传失败(网络或权限错误)，请稍后重试'; }
     statusEl.textContent = '\u274c ' + errMsg;
     areaEl.classList.remove('uploading');
   }
