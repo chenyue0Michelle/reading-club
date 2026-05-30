@@ -1195,7 +1195,15 @@ function toggleRecord() {
         }
         saveCheckins(checkins);
 
-        await doUploadAudio(today, timeStr);
+        // 上传功能暂时关闭，先本地回听
+        // await doUploadAudio(today, timeStr);
+        
+        // 本地完成提示
+        var statusEl = document.getElementById('uploadStatus');
+        statusEl.classList.add('show');
+        statusEl.style.color = '#2ecc71';
+        statusEl.textContent = '\u2705 \u5f55\u97f3\u5b8c\u6210\uff01\u53ef\u4ee5\u56de\u542c\u4e86';
+        duration.textContent = '\u5f55\u97f3\u5df2\u4fdd\u5b58\uff0c\u70b9\u64ad\u653e\u56de\u542c';
       };
 
       isRecording = true;
