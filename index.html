@@ -1044,7 +1044,6 @@ async function uploadToCloud(blob, fileName) {
             callback({
               TmpSecretId: COS_CONFIG.SecretId,
               TmpSecretKey: COS_CONFIG.SecretKey,
-              SecurityToken: '',
               ExpiredTime: Date.now() + 3600000
             });
           }
