@@ -1149,7 +1149,6 @@ let isRecording = false;
 let currentBlob = null;
 
 function toggleRecord() {
-  console.log('[Record] button clicked!');
   var btn = document.getElementById('recordBtn');
   var status = document.getElementById('recordStatus');
   var duration = document.getElementById('recordDuration');
@@ -1157,9 +1156,17 @@ function toggleRecord() {
   // 检测是否HTTPS（除localhost外，外部浏览器必须HTTPS才能录音）
   var isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
   if (!isLocalhost && location.protocol !== 'https:') {
+    alert('请使用 HTTPS 访问（地址栏必须是 https:// 开头）\n或使用微信内置浏览器打开');
     status.className = 'record-status active';
     status.style.color = '#ff9800';
-    status.textContent = '⚠️ 请使用 HTTPS 访问（或改用微信内置浏览器）才能录音';
+    status.textContent = '\u26a0\ufe0f \u8bf7\u4f7f\u7528 HTTPS \u8bbf\u95ee';
+    return;
+  }
+
+  // 检查浏览器是否支持
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    alert('\u60a8\u7684\u6d4f\u89c8\u5668\u4e0d\u652f\u6301\u5f55\u97f3\u529f\u80fd\uff0c\u8bf7\u5347\u7ea7\u6d4f\u89c8\u5668\u6216\u4f7f\u7528\u5fae\u4fe1\u6253\u5f00');
+    status.textContent = '\u274c \u6d4f\u89c8\u5668\u4e0d\u652f\u6301\u5f55\u97f3';
     return;
   }
 
@@ -1233,9 +1240,19 @@ function toggleRecord() {
 
     }).catch(function(err) {
       console.error('\u65e0\u6cd5\u8bbf\u95ee\u9ea6\u514b\u98ce:', err);
+      var errMsg = err && err.message ? err.message : String(err || '\u672a\u77e5\u539f\u56e0');
+      var userMsg = '\u65e0\u6cd5\u4f7f\u7528\u9ea6\u514b\u98ce\uff1a' + errMsg;
+      
+      if (errMsg.indexOf('Permission') >= 0 || errMsg.indexOf('permission') >= 0 || errMsg.indexOf('Denied') >= 0) {
+        userMsg = '\u8bf7\u70b9\u51fb\u6d4f\u89c8\u5668\u5730\u5740\u680f\u5de6\u4fa7\u7684\u9501/\u94a5\u5319\u56fe\u6807 \u2192 \u5141\u8bb8\u9ea6\u514b\u98ce\u6743\u9650 \u2192 \u5237\u65b0\u91cd\u8bd5';
+      } else if (errMsg.indexOf('NotFound') >= 0 || errMsg.indexOf('not found') >= 0) {
+        userMsg = '\u672a\u68c0\u6d4b\u5230\u9ea6\u514b\u98ce\u8bbe\u5907';
+      }
+      
+      alert(userMsg);
       status.className = 'record-status active';
       status.style.color = '#ff4757';
-      status.textContent = '\u274c \u65e0\u6cd5\u8bbf\u95ee\u9ea6\u514b\u98ce';
+      status.textContent = '\u274c ' + userMsg;
     });
 
   } else {
