@@ -1053,8 +1053,9 @@ async function uploadToCloud(blob, fileName) {
       }, function(err, data) {
         clearTimeout(timer);
         if (err) {
-          console.error('[Upload] error:', err);
-          reject(new Error('上传失败: ' + (err.error || JSON.stringify(err).substring(0, 100))));
+          console.error('[Upload] error:', JSON.stringify(err));
+          var errMsg = err.error || err.message || err.code || JSON.stringify(err).substring(0, 150);
+          reject(new Error('上传失败: ' + errMsg));
         } else {
           var url = 'https://' + COS_CONFIG.Bucket + '.cos.' + COS_CONFIG.Region + '.myqcloud.com/recordings/' + fileName;
           console.log('[Upload] OK:', url);
