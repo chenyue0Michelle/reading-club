@@ -412,6 +412,8 @@
       border-radius: 12px;
       padding: 12px 16px;
       margin-bottom: 12px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
     }
     .record-btn {
       width: 44px;
@@ -591,8 +593,15 @@
     @keyframes spin { to { transform: rotate(360deg); } }
 
   </style>
-  <!-- uniCloud SDK (本地文件，不依赖外部CDN) -->
-  <script src="cloudbase.js"></script>
+  <!-- uniCloud SDK (动态异步加载，完全不影响页面功能) -->
+  <script>
+    window.addEventListener('load', function(){
+      var s = document.createElement('script');
+      s.src = 'cloudbase.js';
+      s.onerror = function(){ console.warn('[SDK] uniCloud SDK 加载失败，录音墙不可用'); };
+      document.head.appendChild(s);
+    });
+  </script>
 </head>
 <body>
 
@@ -671,8 +680,8 @@
     </div>
 
     <!-- 录音区域 -->
-    <div class="record-area" id="recordArea">
-      <button class="record-btn" id="recordBtn" onclick="toggleRecord()">🎤</button>
+    <div class="record-area" id="recordArea" onclick="toggleRecord()" ontouchend="toggleRecord()">
+      <button class="record-btn" id="recordBtn">🎤</button>
       <div class="record-info">
         <div class="record-status" id="recordStatus">点击麦克风开始录音朗读</div>
         <div class="record-duration" id="recordDuration"></div>
@@ -1611,7 +1620,8 @@ function closeModal(e) {
 
 // ===== AUDIO WALL (录音墙) =====
 function loadAudioWall() {
-  const listEl = document.getElementById('audioWallList');
+  try {
+  var listEl = document.getElementById('audioWallList');
   if (!listEl) return;
   
   // 先显示加载中
@@ -1670,8 +1680,14 @@ function loadAudioWall() {
     listEl.innerHTML = '<div class="audio-wall-list">' + html + '</div>';
   }).catch(err => {
     console.error('[AudioWall] 加载失败:', err);
-    listEl.innerHTML = '<p style="color:#ff4757;text-align:center;padding:40px;">⚠️ 加载失败，请刷新重试</p>';
+      listEl.innerHTML = '<p style="color:#ff4757;text-align:center;padding:40px;">\u26a0\ufe0f \u52a0\u8f7d\u5931\u8d25\uff0c\u8bf7\u5237\u65b0\u91cd\u8bd5</p>';
+  }).catch(function(err) {
+    console.error('[AudioWall] \u52a0\u8f7d\u5931\u8d25:', err);
+    listEl.innerHTML = '<p style="color:#ff4757;text-align:center;padding:40px;">\u26a0\ufe0f \u52a0\u8f7d\u5931\u8d25\uff0c\u8bf7\u5237\u65b0\u91cd\u8bd5</p>';
   });
+  } catch(e) {
+    console.warn('[AudioWall] SDK not ready:', e);
+  }
 }
 
 // 当切换到录音墙 tab 时刷新
