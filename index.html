@@ -1235,9 +1235,6 @@ function toggleRecord() {
 
     btn.classList.remove('recording');
     btn.textContent = '\ud83c\udfa4\u91cd\u65b0\u5f55\u5236';
-  } catch(e) {
-    console.error('[Record] error:', e);
-    alert('录音出错: ' + (e && e.message ? e.message : String(e)));
   }
 }
 
