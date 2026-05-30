@@ -1149,9 +1149,10 @@ let isRecording = false;
 let currentBlob = null;
 
 function toggleRecord() {
-  const btn = document.getElementById('recordBtn');
-  const status = document.getElementById('recordStatus');
-  const duration = document.getElementById('recordDuration');
+  console.log('[Record] button clicked!');
+  var btn = document.getElementById('recordBtn');
+  var status = document.getElementById('recordStatus');
+  var duration = document.getElementById('recordDuration');
 
   if (!isRecording) {
     navigator.mediaDevices.getUserMedia({ 
@@ -1234,6 +1235,9 @@ function toggleRecord() {
 
     btn.classList.remove('recording');
     btn.textContent = '\ud83c\udfa4\u91cd\u65b0\u5f55\u5236';
+  } catch(e) {
+    console.error('[Record] error:', e);
+    alert('录音出错: ' + (e && e.message ? e.message : String(e)));
   }
 }
 
