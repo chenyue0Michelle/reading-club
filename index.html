@@ -593,7 +593,6 @@
   </style>
   <!-- uniCloud SDK (本地文件，不依赖外部CDN) -->
   <script src="cloudbase.js"></script>
-  <script async src="https://cdn.jsdelivr.net/npm/cos-js-sdk-v5/dist/cos-js-sdk-v5.min.js"></script>
 </head>
 <body>
 
@@ -1015,8 +1014,9 @@ async function initCloud() {
   }
 }
 
-// ===== 方案H: 腾讯云COS上传录音（国内可用、稳定、免费额度充足） =====
+// ===== 方案I: 腾讯云COS原生fetch上传（无SDK依赖、兼容所有浏览器） =====
 // Bucket: reading-club-audio-1423050442  Region: ap-guangzhou
+// 使用Web Crypto API计算签名，纯fetch上传
 
 var COS_CONFIG = {
   SecretId: 'AKIDd8SXVIs7B1cx43oLdhYCbnqfJl01nMgn',
@@ -1025,55 +1025,77 @@ var COS_CONFIG = {
   Region: 'ap-guangzhou'
 };
 
+async function hmacSha1(key, msg) {
+  var enc = new TextEncoder();
+  var keyData = (typeof key === 'string') ? enc.encode(key) : key;
+  var msgData = (typeof msg === 'string') ? enc.encode(msg) : msg;
+  var cryptoKey = await crypto.subtle.importKey('raw', keyData, {name: 'HMAC', hash: 'SHA-1'}, false, ['sign']);
+  var sig = await crypto.subtle.sign('HMAC', cryptoKey, msgData);
+  return Array.from(new Uint8Array(sig)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+}
+
+async function sha1Hash(msg) {
+  var enc = new TextEncoder();
+  var data = (typeof msg === 'string') ? enc.encode(msg) : msg;
+  var hash = await crypto.subtle.digest('SHA-1', data);
+  return Array.from(new Uint8Array(hash)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+}
+
+async function cosSignHeaders(method, path) {
+  var now = Math.floor(Date.now() / 1000);
+  var startTime = now - 60;
+  var endTime = now + 3600;
+  var keyTime = startTime + ';' + endTime;
+  
+  var signKey = await hmacSha1(COS_CONFIG.SecretKey, keyTime);
+  var httpString = method.toLowerCase() + '\n' + path + '\n\n\n';
+  var httpStringHash = await sha1Hash(httpString);
+  var stringToSign = 'sha1\n' + keyTime + '\n' + httpStringHash + '\n\n\n\n\n';
+  var signature = await hmacSha1(signKey, stringToSign);
+  
+  var auth = 'q-sign-algorithm=sha1&q-ak=' + COS_CONFIG.SecretId +
+    '&q-sign-time=' + keyTime +
+    '&q-key-time=' + keyTime +
+    '&q-header-list=&q-url-param-list=&q-signature=' + signature;
+    
+  return { Authorization: auth };
+}
+
 async function uploadToCloud(blob, fileName) {
   var timeoutMs = 30000;
   console.log('[Upload] start:', fileName, 'size:', Math.round(blob.size / 1024), 'KB');
-
-  // 检查COS SDK是否已加载
-  if (typeof COS === 'undefined') {
-    throw new Error('COS SDK未加载，请刷新页面后重试');
-  }
-
+  
   try {
+    var filePath = '/' + COS_CONFIG.Bucket + '/recordings/' + fileName;
+    var url = 'https://' + COS_CONFIG.Bucket + '.cos.' + COS_CONFIG.Region + '.myqcloud.com/recordings/' + fileName;
+    var headers = await cosSignHeaders('PUT', filePath);
+    headers['Host'] = COS_CONFIG.Bucket + '.cos.' + COS_CONFIG.Region + '.myqcloud.com';
+
     var result = await new Promise(function(resolve, reject) {
       var timer = setTimeout(function() { reject(new Error('上传超时(>30s)，请检查网络后重试')); }, timeoutMs);
 
-      try {
-        var cos = new COS({
-          getAuthorization: function(options, callback) {
-            callback({
-              TmpSecretId: COS_CONFIG.SecretId,
-              TmpSecretKey: COS_CONFIG.SecretKey,
-              ExpiredTime: Date.now() + 3600000
-            });
-          }
-        });
-
-        cos.putObject({
-          Bucket: COS_CONFIG.Bucket,
-          Region: COS_CONFIG.Region,
-          Key: 'recordings/' + fileName,
-          Body: blob,
-          onProgress: function(info) { console.log('[Upload] progress:', Math.round(info.percent) + '%'); }
-        }, function(err, data) {
-          clearTimeout(timer);
-          if (err) {
-            console.error('[Upload] cos-error:', JSON.stringify(err));
-            var errMsg = (err.error && typeof err.error === 'string') ? err.error :
-                         (err.message && typeof err.message === 'string') ? err.message :
-                         JSON.stringify(err).substring(0, 200);
-            reject(new Error('COS错误: ' + errMsg));
-          } else {
-            var url = 'https://' + COS_CONFIG.Bucket + '.cos.' + COS_CONFIG.Region + '.myqcloud.com/recordings/' + fileName;
-            console.log('[Upload] OK:', url);
-            resolve(url);
-          }
-        });
-      } catch(cosErr) {
+      fetch(url, {
+        method: 'PUT',
+        headers: headers,
+        body: blob
+      }).then(function(res) {
         clearTimeout(timer);
-        console.error('[Upload] init-error:', cosErr);
-        reject(new Error('COS初始化失败: ' + (cosErr.message || String(cosErr))));
-      }
+        if (res.ok || res.status === 200) {
+          console.log('[Upload] OK:', url);
+          resolve(url);
+        } else {
+          res.text().then(function(text) {
+            console.error('[Upload] HTTP', res.status, ':', text.substring(0, 200));
+            reject(new Error('上传失败(HTTP ' + res.status + ')'));
+          }).catch(function() { 
+            reject(new Error('上传失败(HTTP ' + res.status + ')'));
+          });
+        }
+      }).catch(function(err) {
+        clearTimeout(timer);
+        console.error('[Upload] network error:', err);
+        reject(new Error('网络错误: ' + (err.message || String(err))));
+      });
     });
 
     return result;
