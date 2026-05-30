@@ -1154,6 +1154,15 @@ function toggleRecord() {
   var status = document.getElementById('recordStatus');
   var duration = document.getElementById('recordDuration');
 
+  // 检测是否HTTPS（除localhost外，外部浏览器必须HTTPS才能录音）
+  var isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  if (!isLocalhost && location.protocol !== 'https:') {
+    status.className = 'record-status active';
+    status.style.color = '#ff9800';
+    status.textContent = '⚠️ 请使用 HTTPS 访问（或改用微信内置浏览器）才能录音';
+    return;
+  }
+
   if (!isRecording) {
     navigator.mediaDevices.getUserMedia({ 
       audio: { echoCancellation: true, noiseSuppression: true }
